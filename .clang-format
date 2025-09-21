@@ -1,6 +1,6 @@
 BasedOnStyle:  GNU
 ColumnLimit: 100
-IndentWidth: 4
+IndentWidth: 6
 AlignAfterOpenBracket: Align
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: true

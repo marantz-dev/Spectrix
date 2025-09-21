@@ -1,55 +1,58 @@
 #pragma once
+#include "FFTProcessor.h"
 #include <JuceHeader.h>
 
 class FFTProcessorAudioProcessor : public juce::AudioProcessor,
-                                 public AudioProcessorValueTreeState::Listener {
-public:
-  //==============================================================================
-  FFTProcessorAudioProcessor();
-  ~FFTProcessorAudioProcessor() override;
+                                   public AudioProcessorValueTreeState::Listener {
+    public:
+      //==============================================================================
+      FFTProcessorAudioProcessor();
+      ~FFTProcessorAudioProcessor() override;
 
-  //==============================================================================
-  void prepareToPlay(double sampleRate, int samplesPerBlock) override;
-  void releaseResources() override;
+      //==============================================================================
+      void prepareToPlay(double sampleRate, int samplesPerBlock) override;
+      void releaseResources() override;
 
-  void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
+      void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
 
-  //==============================================================================
-  juce::AudioProcessorEditor *createEditor() override;
-  bool hasEditor() const override;
+      //==============================================================================
+      juce::AudioProcessorEditor *createEditor() override;
+      bool hasEditor() const override;
 
-  //==============================================================================
-  const juce::String getName() const override { return JucePlugin_Name; }
+      //==============================================================================
+      const juce::String getName() const override { return JucePlugin_Name; }
 
-  bool acceptsMidi() const override { return false; }
+      bool acceptsMidi() const override { return false; }
 
-  bool producesMidi() const override { return false; }
+      bool producesMidi() const override { return false; }
 
-  bool isMidiEffect() const override { return false; }
+      bool isMidiEffect() const override { return false; }
 
-  bool isBusesLayoutSupported(const BusesLayout &layouts) const override;
+      bool isBusesLayoutSupported(const BusesLayout &layouts) const override;
 
-  double getTailLengthSeconds() const override { return 0.0; }
+      double getTailLengthSeconds() const override { return 0.0; }
 
-  int getNumPrograms() override { return 1; }
+      int getNumPrograms() override { return 1; }
 
-  int getCurrentProgram() override { return 0; }
+      int getCurrentProgram() override { return 0; }
 
-  void setCurrentProgram(int index) override {}
+      void setCurrentProgram(int index) override {}
 
-  const juce::String getProgramName(int index) override { return {}; }
+      const juce::String getProgramName(int index) override { return {}; }
 
-  void changeProgramName(int index, const juce::String &newName) override {}
+      void changeProgramName(int index, const juce::String &newName) override {}
 
-  //==============================================================================
-  void getStateInformation(juce::MemoryBlock &destData) override;
-  void setStateInformation(const void *data, int sizeInBytes) override;
+      //==============================================================================
+      void getStateInformation(juce::MemoryBlock &destData) override;
+      void setStateInformation(const void *data, int sizeInBytes) override;
 
-private:
-  void parameterChanged(const String &paramID, float newValue) override;
+    private:
+      void parameterChanged(const String &paramID, float newValue) override;
 
-  AudioProcessorValueTreeState parameters;
+      AudioProcessorValueTreeState parameters;
 
-  //==============================================================================
-  JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FFTProcessorAudioProcessor)
+      SpectralClip fftProcessor;
+
+      //==============================================================================
+      JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FFTProcessorAudioProcessor)
 };
