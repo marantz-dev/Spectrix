@@ -1,5 +1,5 @@
 #pragma once
-#include "FFTProcessor.h"
+#include "StaticFFTProcessor.h"
 #include <JuceHeader.h>
 
 class FFTProcessorAudioProcessor : public juce::AudioProcessor,
@@ -51,7 +51,7 @@ class FFTProcessorAudioProcessor : public juce::AudioProcessor,
 
       AudioProcessorValueTreeState parameters;
 
-      SpectralClip fftProcessor;
+      SpectralProcessor<512> fftProcessor;
 
       //==============================================================================
       JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FFTProcessorAudioProcessor)
