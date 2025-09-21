@@ -1,5 +1,5 @@
 #pragma once
-#include "StaticFFTProcessor.h"
+#include "SpectralProcessors.h"
 #include <JuceHeader.h>
 
 class SpectrixAudioProcessor : public juce::AudioProcessor,

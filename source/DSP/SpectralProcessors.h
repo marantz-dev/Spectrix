@@ -11,7 +11,8 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
     public:
       SpectralProcessor()
           : fftSize(FFT_SIZE), hopSize(FFT_SIZE / 2),
-            window(fftSize, juce::dsp::WindowingFunction<float>::hann), fft((int)log2(FFT_SIZE)) {
+            window(fftSize, juce::dsp::WindowingFunction<float>::hann, false),
+            fft((int)log2(FFT_SIZE)) {
             // ########## CONSTRUCTOR ##########
             for(auto &buf : OLABuffers)
                   buf.fill(0.0f);
@@ -55,11 +56,14 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
                   for(size_t i = 0; i < fftSize; ++i)
                         fftBuffer[i] = inFifo[i];
 
-                  window.multiplyWithWindowingTable(fftBuffer.data(), fftSize);
+                  // ########## COMPUTE FFT ##########
 
+                  window.multiplyWithWindowingTable(fftBuffer.data(), fftSize);
                   fft.performRealOnlyForwardTransform(fftBuffer.data());
                   processSpectrum();
                   fft.performRealOnlyInverseTransform(fftBuffer.data());
+
+                  // ########## Overlap-Add ##########
 
                   for(size_t i = 0; i < fftSize; ++i)
                         fftBuffer[i] += olaBuffer[i];

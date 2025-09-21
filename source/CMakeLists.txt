@@ -32,3 +32,11 @@ target_link_libraries(
           juce::juce_dsp
   PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_lto_flags
          juce::juce_recommended_warning_flags)
+
+     target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/DSP
+    ${CMAKE_CURRENT_SOURCE_DIR}/UI
+    ${CMAKE_CURRENT_SOURCE_DIR}/UTILS
+    ${CMAKE_CURRENT_SOURCE_DIR}/UI/Components
+    ${CMAKE_CURRENT_SOURCE_DIR}/UI/Sections)
