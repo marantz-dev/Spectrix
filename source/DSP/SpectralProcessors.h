@@ -10,8 +10,8 @@
 template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
     public:
       SpectralProcessor()
-          : fftSize(FFT_SIZE), hopSize(FFT_SIZE / 2),
-            window(fftSize, juce::dsp::WindowingFunction<float>::hann, false),
+          : hopSize(FFT_SIZE / 2),
+            window(FFT_SIZE, juce::dsp::WindowingFunction<float>::hann, false),
             fft((int)log2(FFT_SIZE)) {
             // ########## CONSTRUCTOR ##########
             for(auto &buf : OLABuffers)
@@ -42,38 +42,44 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
             }
       }
 
-    protected:
-      virtual void processSpectrum() {}
+      virtual void processFFTBins(std::array<float, FFT_SIZE * 2> &fftBuffer) {
+            // ##########################
+            // #                        #
+            // #  SPECTRAL PROCESSING!  #
+            // #                        #
+            // ##########################
+      }
 
     private:
       void computeFFT(int channel) {
+            jassert(channel < NUM_CHANNELS);
             auto &inFifo = inputFifos[channel];
             auto &outFifo = outputFifos[channel];
             auto &fftBuffer = fftBuffers[channel];
             auto &olaBuffer = OLABuffers[channel];
 
-            while(inFifo.size() >= fftSize) {
-                  for(size_t i = 0; i < fftSize; ++i)
+            while(inFifo.size() >= FFT_SIZE) {
+                  for(size_t i = 0; i < FFT_SIZE; ++i)
                         fftBuffer[i] = inFifo[i];
 
                   // ########## COMPUTE FFT ##########
 
-                  window.multiplyWithWindowingTable(fftBuffer.data(), fftSize);
+                  window.multiplyWithWindowingTable(fftBuffer.data(), FFT_SIZE);
                   fft.performRealOnlyForwardTransform(fftBuffer.data());
-                  processSpectrum();
+                  processFFTBins(fftBuffer);
                   fft.performRealOnlyInverseTransform(fftBuffer.data());
 
                   // ########## Overlap-Add ##########
-
-                  for(size_t i = 0; i < fftSize; ++i)
+                  for(size_t i = 0; i < FFT_SIZE; ++i) {
                         fftBuffer[i] += olaBuffer[i];
-
-                  for(size_t i = 0; i < hopSize; ++i)
+                  }
+                  for(size_t i = 0; i < hopSize; ++i) {
                         outFifo.push(fftBuffer[i]);
+                  }
 
-                  std::copy(fftBuffer.begin() + hopSize, fftBuffer.begin() + fftSize,
+                  std::copy(fftBuffer.begin() + hopSize, fftBuffer.begin() + FFT_SIZE,
                             olaBuffer.begin());
-                  std::fill(olaBuffer.begin() + (fftSize - hopSize), olaBuffer.end(), 0.0f);
+                  std::fill(olaBuffer.begin() + (FFT_SIZE - hopSize), olaBuffer.end(), 0.0f);
 
                   for(size_t i = 0; i < hopSize; ++i)
                         inFifo.pop();
@@ -86,15 +92,16 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
       // #                    #
       // ######################
 
-      const size_t fftSize;
       const size_t hopSize;
 
       juce::dsp::WindowingFunction<float> window;
       juce::dsp::FFT fft;
 
-      std::array<CircularBuffer<float, FFT_SIZE * 4>, NUM_CHANNELS> inputFifos;
-      std::array<CircularBuffer<float, FFT_SIZE * 4>, NUM_CHANNELS> outputFifos;
+      std::array<CircularBuffer<float, FFT_SIZE * 2>, NUM_CHANNELS> inputFifos;
+      std::array<CircularBuffer<float, FFT_SIZE * 2>, NUM_CHANNELS> outputFifos;
       std::array<std::array<float, FFT_SIZE>, NUM_CHANNELS> OLABuffers;
+
+    protected:
       std::array<std::array<float, FFT_SIZE * 2>, NUM_CHANNELS> fftBuffers;
 
       JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralProcessor)
