@@ -64,7 +64,7 @@ bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
       if(paramID == Parameters::magThreshold) {
-            // spectralProcessor.setGain(newValue);
+            spectralProcessor.setGain(newValue);
       }
       if(paramID == Parameters::nameMakeup) {
             float gain = Decibels::decibelsToGain(newValue);

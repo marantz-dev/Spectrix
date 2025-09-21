@@ -51,7 +51,7 @@ class SpectrixAudioProcessor : public juce::AudioProcessor,
 
       AudioProcessorValueTreeState parameters;
 
-      SpectralProcessor<512> spectralProcessor;
+      SpectralCompressor<512> spectralProcessor;
 
       //==============================================================================
       JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrixAudioProcessor)

@@ -29,6 +29,12 @@ template <typename TYPE, size_t SIZE> class CircularBuffer {
             jassert(index < count);
             return buffer[(readIndex + index) % SIZE];
       }
+      float clear() {
+            writeIndex = 0;
+            readIndex = 0;
+            count = 0;
+            buffer.fill(0);
+      }
 
       float getFirstElement() const { return buffer[readIndex]; }
 
