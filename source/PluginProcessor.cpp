@@ -3,7 +3,7 @@
 #include "PluginParameters.h"
 
 //==============================================================================
-FFTProcessorAudioProcessor::FFTProcessorAudioProcessor()
+SpectrixAudioProcessor::SpectrixAudioProcessor()
     : AudioProcessor(BusesProperties()
                       .withInput("Input", AudioChannelSet::stereo(), true)
                       .withOutput("Output", AudioChannelSet::stereo(), true)),
@@ -13,40 +13,40 @@ FFTProcessorAudioProcessor::FFTProcessorAudioProcessor()
       Parameters::addListeners(parameters, this);
 }
 
-FFTProcessorAudioProcessor::~FFTProcessorAudioProcessor() {}
+SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
 
 //==============================================================================
-void FFTProcessorAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {}
+void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {}
 
-void FFTProcessorAudioProcessor::releaseResources() {}
+void SpectrixAudioProcessor::releaseResources() {}
 
-void FFTProcessorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
+void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                               juce::MidiBuffer &midiMessages) {
       juce::ScopedNoDenormals noDenormals;
       fftProcessor.processBlock(buffer);
 }
 
-bool FFTProcessorAudioProcessor::hasEditor() const {
+bool SpectrixAudioProcessor::hasEditor() const {
       return false; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor *FFTProcessorAudioProcessor::createEditor() {
-      return new FFTProcessorAudioProcessorEditor(*this);
+juce::AudioProcessorEditor *SpectrixAudioProcessor::createEditor() {
+      return new SpectrixAudioProcessorEditor(*this);
 }
 
-void FFTProcessorAudioProcessor::getStateInformation(juce::MemoryBlock &destData) {
+void SpectrixAudioProcessor::getStateInformation(juce::MemoryBlock &destData) {
       auto state = parameters.copyState();
       std::unique_ptr<XmlElement> xml(state.createXml());
       copyXmlToBinary(*xml, destData);
 }
 
-void FFTProcessorAudioProcessor::setStateInformation(const void *data, int sizeInBytes) {
+void SpectrixAudioProcessor::setStateInformation(const void *data, int sizeInBytes) {
       std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
       if(xmlState.get() != nullptr)
             if(xmlState->hasTagName(parameters.state.getType()))
                   parameters.replaceState(ValueTree::fromXml(*xmlState));
 }
-bool FFTProcessorAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
+bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
       if(layouts.getMainInputChannelSet() != AudioChannelSet::mono()
          && layouts.getMainOutputChannelSet() != AudioChannelSet::mono())
             return false;
@@ -62,7 +62,7 @@ bool FFTProcessorAudioProcessor::isBusesLayoutSupported(const BusesLayout &layou
       return true;
 }
 
-void FFTProcessorAudioProcessor::parameterChanged(const String &paramID, float newValue) {
+void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
       if(paramID == Parameters::magThreshold) {
             // fftProcessor.setGain(newValue);
       }
@@ -73,5 +73,5 @@ void FFTProcessorAudioProcessor::parameterChanged(const String &paramID, float n
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {
-      return new FFTProcessorAudioProcessor();
+      return new SpectrixAudioProcessor();
 }

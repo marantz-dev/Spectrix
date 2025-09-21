@@ -2,12 +2,12 @@
 #include "StaticFFTProcessor.h"
 #include <JuceHeader.h>
 
-class FFTProcessorAudioProcessor : public juce::AudioProcessor,
-                                   public AudioProcessorValueTreeState::Listener {
+class SpectrixAudioProcessor : public juce::AudioProcessor,
+                               public AudioProcessorValueTreeState::Listener {
     public:
       //==============================================================================
-      FFTProcessorAudioProcessor();
-      ~FFTProcessorAudioProcessor() override;
+      SpectrixAudioProcessor();
+      ~SpectrixAudioProcessor() override;
 
       //==============================================================================
       void prepareToPlay(double sampleRate, int samplesPerBlock) override;
@@ -54,5 +54,5 @@ class FFTProcessorAudioProcessor : public juce::AudioProcessor,
       SpectralProcessor<512> fftProcessor;
 
       //==============================================================================
-      JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FFTProcessorAudioProcessor)
+      JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrixAudioProcessor)
 };

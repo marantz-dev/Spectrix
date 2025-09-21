@@ -92,15 +92,15 @@ list(APPEND GCC_WARNINGS -Werror)
 list(APPEND MSVC_WARNINGS /WX)
 
 if(MSVC)
-  set(FFTProcessor_WARNINGS_CXX ${MSVC_WARNINGS})
+  set(Spectrix_WARNINGS_CXX ${MSVC_WARNINGS})
 elseif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-  set(FFTProcessor_WARNINGS_CXX ${CLANG_WARNINGS})
+  set(Spectrix_WARNINGS_CXX ${CLANG_WARNINGS})
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(FFTProcessor_WARNINGS_CXX ${GCC_WARNINGS})
+  set(Spectrix_WARNINGS_CXX ${GCC_WARNINGS})
 else()
   message(AUTHOR_WARNING "No compiler warnings set for CXX compiler: '${CMAKE_CXX_COMPILER_ID}'")
   # TODO support Intel compiler
 endif()
 
 # use the same warning flags for C
-set(FFTProcessor_WARNINGS_C "${FFTProcessor_WARNINGS_CXX}")
+set(Spectrix_WARNINGS_C "${Spectrix_WARNINGS_CXX}")
