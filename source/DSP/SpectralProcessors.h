@@ -18,7 +18,12 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
       SpectralProcessor()
           : hopSize(FFT_SIZE / 2),
             window(FFT_SIZE, juce::dsp::WindowingFunction<float>::hann, false),
-            fft((int)log2(FFT_SIZE)) {}
+            fft((int)log2(FFT_SIZE)) {
+            static_assert((FFT_SIZE & (FFT_SIZE - 1)) == 0, "FFT_SIZE must be a power of 2");
+            static_assert(FFT_SIZE >= 64, "FFT_SIZE must be at least 64");
+            static_assert(NUM_CHANNELS > 0 && NUM_CHANNELS <= 8,
+                          "NUM_CHANNELS must be between 1 and 8");
+      }
 
       ~SpectralProcessor() = default;
 
@@ -141,7 +146,7 @@ class SpectralCompressor : public SpectralProcessor<FFT_SIZE, NUM_CHANNELS> {
                   transformedBuffer[i * 2 + 1] = magnitude * std::sin(phase);
 
                   // Assolutamente inutile Rimuovere sta menata e se vuoi scalare scala direttamente
-                  // real e img
+                  // real e img dio spennato
             }
       }
 

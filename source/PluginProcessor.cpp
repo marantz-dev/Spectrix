@@ -16,7 +16,9 @@ SpectrixAudioProcessor::SpectrixAudioProcessor()
 SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
 
 //==============================================================================
-void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {}
+void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
+      spectralProcessor.prepareToPlay();
+}
 
 void SpectrixAudioProcessor::releaseResources() {}
 
