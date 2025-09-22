@@ -5,14 +5,6 @@ It applies dynamic range compression across the frequency spectrum for more prec
 
 ---
 
-## Features
-- Multi-band compression in the frequency domain  
-- Real-time audio processing with JUCE DSP  
-- VST3 and Standalone formats  
-- Cross-platform (macOS & Windows)  
-
----
-
 ## Requirements
 - [JUCE 8](https://github.com/juce-framework/JUCE) installed locally  
 - CMake ≥ 3.22  
