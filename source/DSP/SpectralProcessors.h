@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdio>
 #include <array>
@@ -80,7 +81,6 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class SpectralProcesso
             storeMagnitudes(fftBuffer, channel);
             processFFTBins(fftBuffer);
             fft.performRealOnlyInverseTransform(fftBuffer.data());
-            window.multiplyWithWindowingTable(fftBuffer.data(), FFT_SIZE);
 
             for(size_t i = 0; i < FFT_SIZE; ++i)
                   fftBuffer[i] += olaBuffer[i];
@@ -98,42 +98,34 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class SpectralProcesso
       void storeMagnitudes(const std::array<float, FFT_SIZE * 2> &fftBuffer, int channel) {
             juce::SpinLock::ScopedLockType lock(mutex);
 
-            const float windowCompensation = 2.0f; // Hann window compensation
+            constexpr float windowCompensation = 2.0f; // Hann window compensation
             const float scale = (2.0f / FFT_SIZE) * windowCompensation;
             const float dcNyquistScale = (1.0f / FFT_SIZE) * windowCompensation;
-
             const float channelWeight = (NUM_CHANNELS > 1) ? 0.5f : 1.0f;
 
-            if(channel == 0) {
-                  tempMagnitudes[0] = std::abs(fftBuffer[0]) * dcNyquistScale * channelWeight;
-
-                  for(size_t i = 1; i < FFT_SIZE / 2; ++i) {
-                        float real = fftBuffer[i];
-                        float imag = fftBuffer[i + FFT_SIZE];
-                        tempMagnitudes[i]
-                         = std::sqrt(real * real + imag * imag) * scale * channelWeight;
+            auto computeMag = [&](size_t bin) {
+                  if(bin == 0 || bin == FFT_SIZE / 2) {
+                        return std::abs(fftBuffer[bin]) * dcNyquistScale * channelWeight;
+                  } else {
+                        float real = fftBuffer[bin];
+                        float imag = fftBuffer[bin + FFT_SIZE];
+                        return std::sqrt(real * real + imag * imag) * scale * channelWeight;
                   }
+            };
 
-                  tempMagnitudes[FFT_SIZE / 2]
-                   = std::abs(fftBuffer[FFT_SIZE / 2]) * dcNyquistScale * channelWeight;
+            auto &target = (channel == 0 ? tempMagnitudes : magnitudes);
 
-                  if(NUM_CHANNELS == 1) {
-                        magnitudes = tempMagnitudes;
+            for(size_t i = 0; i <= FFT_SIZE / 2; ++i) {
+                  float mag = computeMag(i);
+                  if(channel == 0) {
+                        tempMagnitudes[i] = mag;
+                  } else if(NUM_CHANNELS > 1) {
+                        target[i] = tempMagnitudes[i] + mag;
                   }
-            } else if(channel == 1 && NUM_CHANNELS > 1) {
-                  magnitudes[0]
-                   = tempMagnitudes[0] + (std::abs(fftBuffer[0]) * dcNyquistScale * channelWeight);
+            }
 
-                  for(size_t i = 1; i < FFT_SIZE / 2; ++i) {
-                        float real = fftBuffer[i];
-                        float imag = fftBuffer[i + FFT_SIZE];
-                        float mag = std::sqrt(real * real + imag * imag) * scale * channelWeight;
-                        magnitudes[i] = tempMagnitudes[i] + mag;
-                  }
-
-                  magnitudes[FFT_SIZE / 2]
-                   = tempMagnitudes[FFT_SIZE / 2]
-                     + (std::abs(fftBuffer[FFT_SIZE / 2]) * dcNyquistScale * channelWeight);
+            if(channel == 0 && NUM_CHANNELS == 1) {
+                  magnitudes = tempMagnitudes;
             }
       }
 
@@ -148,8 +140,8 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class SpectralProcesso
       std::array<std::array<float, FFT_SIZE * 2>, NUM_CHANNELS> fftBuffers;
 
       mutable juce::SpinLock mutex;
-      std::array<float, FFT_SIZE / 2 + 1> magnitudes;     // Final averaged magnitudes for display
-      std::array<float, FFT_SIZE / 2 + 1> tempMagnitudes; // Temporary storage for stereo averaging
+      std::array<float, FFT_SIZE / 2 + 1> magnitudes;
+      std::array<float, FFT_SIZE / 2 + 1> tempMagnitudes;
 
     protected:
       JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralProcessor)
