@@ -3,37 +3,26 @@
 #include <JuceHeader.h>
 
 namespace Parameters {
-      static const String parameterName = "PARAMETERCODE";
+      static const int FFT_SIZE = 2048;
+
       static const String magThreshold = "MT";
+      static const String spectrumAttack = "SA";
 
-      static const float defaultParameterValue = 0.5f;
       static const float defaultThresholdValue = 0.8f;
-
-      static const int FFT_SIZE = 4096;
-
-      // Makeup Gain
-      static const String nameMakeup = "MAKEUP";
-      static const float defaultMakeup = 0.0f;
-      static const float minMakeup = -24.0f;
-      static const float maxMakeup = 24.0f;
-      static const float stepSizeMakeup = 0.1f;
-      static const float skewFactorMakeup = 1.0f;
+      static const float defaultSpectrumDetail = 0.6f;
 
       static AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
+            int id = 0;
             std::vector<std::unique_ptr<RangedAudioParameter>> params;
 
             params.push_back(std::make_unique<AudioParameterFloat>(
-             ParameterID("PARAMETERCODE", 0), "PARAMETER DESCRIPTION",
-             NormalisableRange<float>(0.0f, 1.0f, 0.001, 1.0), defaultParameterValue));
-
-            params.push_back(std::make_unique<AudioParameterFloat>(
-             ParameterID(nameMakeup, 1), "Makeup (dB)",
-             NormalisableRange<float>(minMakeup, maxMakeup, stepSizeMakeup, skewFactorMakeup),
-             defaultMakeup));
-
-            params.push_back(std::make_unique<AudioParameterFloat>(
-             ParameterID("MT", 2), "Magnitude Threshold",
+             ParameterID("MT", id++), "Magnitude Threshold",
              NormalisableRange<float>(0.001f, 1.0f, 0.001, 1.0), defaultThresholdValue));
+
+            params.push_back(std::make_unique<AudioParameterFloat>(
+             ParameterID("SA", id++), "Spectrum Detail",
+             NormalisableRange<float>(0.001f, 1.0f, 0.001, 1.0), defaultSpectrumDetail));
+
             return {params.begin(), params.end()};
       }
       static void addListeners(AudioProcessorValueTreeState &valueTreeState,

@@ -4,9 +4,9 @@
 #include <cstddef>
 
 // TODO:
-// implementare la curva di compressione come una somma di una famiglia di gaussiane
+// implementare la curva di compressione come somma di una famiglia di gaussiane
 // ogni breakpoint:
-// frequency = mu
+// frequency = media (mu) peak della gaussiana
 // gain = amp
 // quality = sigma
 // la curva di compressione sarà la somma di tutte le gaussiane

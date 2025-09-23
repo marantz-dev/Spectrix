@@ -47,7 +47,7 @@ class SpectrixAudioProcessor : public juce::AudioProcessor,
       void getStateInformation(juce::MemoryBlock &destData) override;
       void setStateInformation(const void *data, int sizeInBytes) override;
 
-      SpectralCompressor<Parameters::FFT_SIZE> spectralProcessor;
+      SpectralClipper<Parameters::FFT_SIZE> spectralCompressor;
 
     private:
       void parameterChanged(const String &paramID, float newValue) override;

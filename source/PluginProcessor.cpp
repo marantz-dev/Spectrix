@@ -17,7 +17,7 @@ SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
 
 //==============================================================================
 void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-      spectralProcessor.prepareToPlay();
+      spectralCompressor.prepareToPlay();
 }
 
 void SpectrixAudioProcessor::releaseResources() {}
@@ -25,7 +25,7 @@ void SpectrixAudioProcessor::releaseResources() {}
 void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                           juce::MidiBuffer &midiMessages) {
       juce::ScopedNoDenormals noDenormals;
-      spectralProcessor.processBlock(buffer);
+      spectralCompressor.processBlock(buffer);
 }
 
 bool SpectrixAudioProcessor::hasEditor() const {
@@ -66,11 +66,11 @@ bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
       if(paramID == Parameters::magThreshold) {
-            spectralProcessor.setGain(newValue);
+            spectralCompressor.setThreshold(newValue);
       }
-      if(paramID == Parameters::nameMakeup) {
-            float gain = Decibels::decibelsToGain(newValue);
-            // fftProcessor.setMakeup(gain);
+      if(paramID == Parameters::spectrumAttack) {
+            if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor()))
+                  editor->updateSpectrumDetail(newValue);
       }
 }
 

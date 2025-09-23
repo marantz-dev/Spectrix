@@ -4,14 +4,18 @@
 
 SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p),
-      spectrumDisplay(audioProcessor.spectralProcessor, audioProcessor.getSampleRate()) {
+      spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()) {
       // Constructor
-      setSize(1200, 800);
+      setSize(1600, 800);
       addAndMakeVisible(spectrumDisplay);
       spectrumDisplay.setBounds(getLocalBounds());
 }
 
 SpectrixAudioProcessorEditor::~SpectrixAudioProcessorEditor() {}
+
+void SpectrixAudioProcessorEditor::updateSpectrumDetail(float newAttack) {
+      spectrumDisplay.updateSpectrumDetail(newAttack);
+}
 
 void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
       g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));

@@ -14,6 +14,8 @@ class SpectrixAudioProcessorEditor : public juce::AudioProcessorEditor {
       void paint(juce::Graphics &) override;
       void resized() override;
 
+      void updateSpectrumDetail(float newAttack);
+
     private:
       SpectrixAudioProcessor &audioProcessor;
       SpectrumDisplay<Parameters::FFT_SIZE> spectrumDisplay;

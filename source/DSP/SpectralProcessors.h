@@ -6,6 +6,8 @@
 #include <array>
 #include <juce_dsp/juce_dsp.h>
 #include "CircularBuffer.h"
+#include "juce_core/juce_core.h"
+#include "juce_core/system/juce_PlatformDefs.h"
 
 template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class SpectralProcessor {
     public:
@@ -78,8 +80,8 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class SpectralProcesso
 
             window.multiplyWithWindowingTable(fftBuffer.data(), FFT_SIZE);
             fft.performRealOnlyForwardTransform(fftBuffer.data());
-            storeMagnitudes(fftBuffer, channel);
             processFFTBins(fftBuffer);
+            storeMagnitudes(fftBuffer, channel);
             fft.performRealOnlyInverseTransform(fftBuffer.data());
 
             for(size_t i = 0; i < FFT_SIZE; ++i)
@@ -147,45 +149,41 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class SpectralProcesso
       JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralProcessor)
 };
 
-// #########################
-// #                       #
-// #  SPECTRAL COMPRESSOR  #
-// #                       #
-// #########################
+// #################################################
+// #                                               #
+// #  FOR TESTING PURPOSES WE IMPLEMENT A CLIPPER  #
+// #                                               #
+// #################################################
 
 template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2>
-class SpectralCompressor : public SpectralProcessor<FFT_SIZE, NUM_CHANNELS> {
+class SpectralClipper : public SpectralProcessor<FFT_SIZE, NUM_CHANNELS> {
+      // RICORDA!!!!!!: QUESTO CLIPPER E UNA BOIATA GIUTO PER TESTARE MA E TUTTO SBAGLIATO
     public:
-      SpectralCompressor() : SpectralProcessor<FFT_SIZE, NUM_CHANNELS>() {}
-      void setGain(float newGain) { gain = newGain; }
+      SpectralClipper() : SpectralProcessor<FFT_SIZE, NUM_CHANNELS>() {}
+
+      void setThreshold(float newThreshold) {
+            threshold = newThreshold * FFT_SIZE / 4;
+            // DBG("New THR: " << threshold);
+      }
 
     private:
       void processFFTBins(std::array<float, FFT_SIZE * 2> &transformedBuffer) override {
-            // ####################################
-            // #                                  #
-            // #  SPECTRAL PROCESSING GOES HERE!  #
-            // #                                  #
-            // ####################################
-
-            // Example: Simple "Spectral" gain reduction
-            for(size_t i = 0; i < FFT_SIZE; ++i) {
+            for(size_t i = 1; i < FFT_SIZE; ++i) {
                   float real = transformedBuffer[i * 2];
                   float imag = transformedBuffer[i * 2 + 1];
-                  float magnitude = std::sqrt(real * real + imag * imag);
+                  float mag = std::sqrt(real * real + imag * imag);
                   float phase = std::atan2(imag, real);
+                  // Hard clip
+                  if(mag > threshold)
+                        mag = threshold;
 
-                  // Apply gain reduction
-                  magnitude *= gain;
-
-                  // Reconstruct the complex number
-                  transformedBuffer[i * 2] = magnitude * std::cos(phase);
-                  transformedBuffer[i * 2 + 1] = magnitude * std::sin(phase);
-
-                  // Assolutamente inutile Rimuovere sta menata e se vuoi scalare scala direttamente
-                  // real e img dio spennato
+                  // Reconstruct complex bin
+                  transformedBuffer[i * 2] = mag * std::cos(phase);
+                  transformedBuffer[i * 2 + 1] = mag * std::sin(phase);
             }
       }
 
-      float gain = 1.0f;
-      JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralCompressor)
+      float threshold = 1.0f; // linear amplitude scale
+
+      JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralClipper)
 };
