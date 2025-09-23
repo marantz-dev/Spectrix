@@ -1,6 +1,7 @@
 #pragma once
 #include "SpectralProcessors.h"
 #include <JuceHeader.h>
+#include "PluginParameters.h"
 
 class SpectrixAudioProcessor : public juce::AudioProcessor,
                                public AudioProcessorValueTreeState::Listener {
@@ -46,12 +47,12 @@ class SpectrixAudioProcessor : public juce::AudioProcessor,
       void getStateInformation(juce::MemoryBlock &destData) override;
       void setStateInformation(const void *data, int sizeInBytes) override;
 
+      SpectralCompressor<Parameters::FFT_SIZE> spectralProcessor;
+
     private:
       void parameterChanged(const String &paramID, float newValue) override;
 
       AudioProcessorValueTreeState parameters;
-
-      SpectralCompressor<512> spectralProcessor;
 
       //==============================================================================
       JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrixAudioProcessor)

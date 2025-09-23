@@ -11,7 +11,7 @@ It applies dynamic range compression across the frequency spectrum for more prec
 
 ## Build Instructions
 
-‼️ If you want to use JUCE that is already installled on you system you need to point the cpm package to your JUCE path
+‼️ **If you want to use JUCE that is already installled on you system you need to point the cpm package to your JUCE path**
 
 ### In Spectrix/CMakeLists.txt
 ```bash

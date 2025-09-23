@@ -1,4 +1,3 @@
-
 #pragma once
 #include <JuceHeader.h>
 #include <cstddef>
@@ -7,13 +6,7 @@
 #include <juce_dsp/juce_dsp.h>
 #include "CircularBuffer.h"
 
-// ################################
-// #                              #
-// #  VIRTUAL SPECTRAL PROCESSOR  #
-// #                              #
-// ################################
-
-template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
+template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class SpectralProcessor {
     public:
       SpectralProcessor()
           : hopSize(FFT_SIZE / 2),
@@ -39,6 +32,8 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
 
             for(auto &fifo : outputFifos)
                   fifo.clear();
+
+            magnitudes.fill(0.0f);
       }
 
       void processBlock(juce::AudioBuffer<float> &buffer) {
@@ -58,6 +53,10 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
             }
       }
 
+      const std::array<float, FFT_SIZE / 2 + 1> &getMagnitudes() const { return magnitudes; }
+
+      size_t getFFTSize() const { return FFT_SIZE; }
+
       virtual void processFFTBins(std::array<float, FFT_SIZE * 2> &fftBuffer) = 0;
 
     private:
@@ -71,16 +70,21 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
             auto &fftBuffer = fftBuffers[channel];
             auto &olaBuffer = OLABuffers[channel];
 
+            fftBuffer.fill(0.0f);
+
             for(size_t i = 0; i < FFT_SIZE; ++i)
                   fftBuffer[i] = inFifo[i];
 
             window.multiplyWithWindowingTable(fftBuffer.data(), FFT_SIZE);
             fft.performRealOnlyForwardTransform(fftBuffer.data());
+            storeMagnitudes(fftBuffer, channel);
             processFFTBins(fftBuffer);
             fft.performRealOnlyInverseTransform(fftBuffer.data());
+            window.multiplyWithWindowingTable(fftBuffer.data(), FFT_SIZE);
 
             for(size_t i = 0; i < FFT_SIZE; ++i)
                   fftBuffer[i] += olaBuffer[i];
+
             for(size_t i = 0; i < hopSize; ++i)
                   outFifo.push(fftBuffer[i]);
 
@@ -91,14 +95,50 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
                   inFifo.pop();
       }
 
-      // ######################
-      // #                    #
-      // #  MEMBER VARIABLES  #
-      // #                    #
-      // ######################
+      void storeMagnitudes(const std::array<float, FFT_SIZE * 2> &fftBuffer, int channel) {
+            juce::SpinLock::ScopedLockType lock(mutex);
 
+            const float windowCompensation = 2.0f; // Hann window compensation
+            const float scale = (2.0f / FFT_SIZE) * windowCompensation;
+            const float dcNyquistScale = (1.0f / FFT_SIZE) * windowCompensation;
+
+            const float channelWeight = (NUM_CHANNELS > 1) ? 0.5f : 1.0f;
+
+            if(channel == 0) {
+                  tempMagnitudes[0] = std::abs(fftBuffer[0]) * dcNyquistScale * channelWeight;
+
+                  for(size_t i = 1; i < FFT_SIZE / 2; ++i) {
+                        float real = fftBuffer[i];
+                        float imag = fftBuffer[i + FFT_SIZE];
+                        tempMagnitudes[i]
+                         = std::sqrt(real * real + imag * imag) * scale * channelWeight;
+                  }
+
+                  tempMagnitudes[FFT_SIZE / 2]
+                   = std::abs(fftBuffer[FFT_SIZE / 2]) * dcNyquistScale * channelWeight;
+
+                  if(NUM_CHANNELS == 1) {
+                        magnitudes = tempMagnitudes;
+                  }
+            } else if(channel == 1 && NUM_CHANNELS > 1) {
+                  magnitudes[0]
+                   = tempMagnitudes[0] + (std::abs(fftBuffer[0]) * dcNyquistScale * channelWeight);
+
+                  for(size_t i = 1; i < FFT_SIZE / 2; ++i) {
+                        float real = fftBuffer[i];
+                        float imag = fftBuffer[i + FFT_SIZE];
+                        float mag = std::sqrt(real * real + imag * imag) * scale * channelWeight;
+                        magnitudes[i] = tempMagnitudes[i] + mag;
+                  }
+
+                  magnitudes[FFT_SIZE / 2]
+                   = tempMagnitudes[FFT_SIZE / 2]
+                     + (std::abs(fftBuffer[FFT_SIZE / 2]) * dcNyquistScale * channelWeight);
+            }
+      }
+
+      // Member variables
       const size_t hopSize;
-
       juce::dsp::WindowingFunction<float> window;
       juce::dsp::FFT fft;
 
@@ -106,6 +146,10 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
       std::array<CircularBuffer<float, FFT_SIZE * 2>, NUM_CHANNELS> outputFifos;
       std::array<std::array<float, FFT_SIZE>, NUM_CHANNELS> OLABuffers;
       std::array<std::array<float, FFT_SIZE * 2>, NUM_CHANNELS> fftBuffers;
+
+      mutable juce::SpinLock mutex;
+      std::array<float, FFT_SIZE / 2 + 1> magnitudes;     // Final averaged magnitudes for display
+      std::array<float, FFT_SIZE / 2 + 1> tempMagnitudes; // Temporary storage for stereo averaging
 
     protected:
       JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralProcessor)
@@ -117,7 +161,7 @@ template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2> class SpectralProcessor {
 // #                       #
 // #########################
 
-template <size_t FFT_SIZE, size_t NUM_CHANNELS = 2>
+template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2>
 class SpectralCompressor : public SpectralProcessor<FFT_SIZE, NUM_CHANNELS> {
     public:
       SpectralCompressor() : SpectralProcessor<FFT_SIZE, NUM_CHANNELS>() {}

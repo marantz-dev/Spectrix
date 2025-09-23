@@ -29,7 +29,7 @@ void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 }
 
 bool SpectrixAudioProcessor::hasEditor() const {
-      return false; // (change this to false if you choose to not supply an editor)
+      return true; // (change this to false if you choose to not supply an editor)
 }
 
 juce::AudioProcessorEditor *SpectrixAudioProcessor::createEditor() {

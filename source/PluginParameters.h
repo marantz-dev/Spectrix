@@ -9,6 +9,8 @@ namespace Parameters {
       static const float defaultParameterValue = 0.5f;
       static const float defaultThresholdValue = 0.8f;
 
+      static const int FFT_SIZE = 4096;
+
       // Makeup Gain
       static const String nameMakeup = "MAKEUP";
       static const float defaultMakeup = 0.0f;
