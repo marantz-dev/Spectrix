@@ -1,6 +1,6 @@
-BasedOnStyle:  GNU
+BasedOnStyle: GNU
 ColumnLimit: 100
-IndentWidth: 6
+IndentWidth: 4
 AlignAfterOpenBracket: Align
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: true
@@ -27,7 +27,7 @@ BraceWrapping:
 ContinuationIndentWidth: 1
 Cpp11BracedListStyle: true
 KeepEmptyLinesAtTheStartOfBlocks: false
-Language:        Cpp
+Language: Cpp
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 PenaltyExcessCharacter: 100
@@ -36,4 +36,4 @@ PointerAlignment: Right
 SortIncludes: false
 SpaceBeforeParens: Never
 SpacesInContainerLiterals: false
-Standard:        Cpp11
+Standard: Cpp11
