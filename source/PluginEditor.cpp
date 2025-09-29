@@ -10,6 +10,12 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
     addAndMakeVisible(spectrumDisplay);
     spectrumDisplay.setBounds(getLocalBounds());
 
+    // #######################################
+    // #                                     #
+    // #  UNCOMMENT THIS FOR RESPONSE CURVE  #
+    // #                                     #
+    // #######################################
+
     // addAndMakeVisible(responseCurve);
     // responseCurve.setBounds(getLocalBounds());
 }
