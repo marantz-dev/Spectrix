@@ -6,8 +6,8 @@
 
 template <int FFTSize> class SpectrumDisplay : public juce::Component, private juce::Timer {
   public:
-    SpectrumDisplay(SpectralProcessor<FFTSize> &spectralProcessor, double sampleRateInHz)
-        : processor(spectralProcessor), sampleRate(sampleRateInHz) {
+    SpectrumDisplay(SpectralProcessor<FFTSize> &spectralProcessor, const double sampleRateHz)
+        : processor(spectralProcessor), sampleRate(sampleRateHz) {
         magnitudes.resize(processor.getMagnitudes().size(), -100.0f);
         startTimerHz(60);
     }
@@ -75,6 +75,11 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
                 spectrumPath.quadraticTo(points[i - 1], midPoint);
             }
         }
+
+        g.setColour(juce::Colours::cyan.brighter());
+
+        g.strokePath(spectrumPath, juce::PathStrokeType(2.0f));
+
         spectrumPath.lineTo(points.back().x, bounds.getBottom());
         spectrumPath.lineTo(points[0].x, bounds.getBottom());
         spectrumPath.closeSubPath();
@@ -126,19 +131,22 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     }
 
     void updateMagnitudes(const auto &newMagnitudes) {
-        const float smoothingFactor = 0.7f;
+        const float attackCoeff = 0.2f;
+        const float releaseCoeff = 0.005f;
 
         for(size_t i = 0; i < newMagnitudes.size() && i < magnitudes.size(); ++i) {
             float magnitudeDB
              = newMagnitudes[i] > 1e-10f ? 20.0f * std::log10(newMagnitudes[i]) : -100.0f;
-            magnitudes[i]
-             = magnitudes[i] * (1.0f - smoothingFactor) + magnitudeDB * smoothingFactor;
+            if(magnitudeDB > magnitudes[i]) {
+                magnitudes[i] = magnitudes[i] * (1.0f - attackCoeff) + magnitudeDB * attackCoeff;
+            } else {
+                magnitudes[i] = magnitudes[i] * (1.0f - releaseCoeff) + magnitudeDB * releaseCoeff;
+            }
         }
     }
 
     SpectralProcessor<FFTSize> &processor;
     std::vector<float> magnitudes;
     double sampleRate;
-    float spectrumAttack = 0.1f;
-    float spectrumRelease = 0.8f;
+    float spectrumAttack = 0.2f;
 };

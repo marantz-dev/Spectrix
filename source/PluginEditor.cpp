@@ -6,7 +6,7 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
     : AudioProcessorEditor(&p), audioProcessor(p),
       spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()) {
     // Constructor
-    setSize(1600, 800);
+    setSize(1000, 600);
     addAndMakeVisible(spectrumDisplay);
     spectrumDisplay.setBounds(getLocalBounds());
 
@@ -16,8 +16,8 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
     // #                                     #
     // #######################################
 
-    // addAndMakeVisible(responseCurve);
-    // responseCurve.setBounds(getLocalBounds());
+    addAndMakeVisible(responseCurve);
+    responseCurve.setBounds(getLocalBounds());
 }
 
 SpectrixAudioProcessorEditor::~SpectrixAudioProcessorEditor() {}

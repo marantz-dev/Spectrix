@@ -10,68 +10,68 @@ SpectrixAudioProcessor::SpectrixAudioProcessor()
       parameters(*this, nullptr, "PLG", Parameters::createParameterLayout())
 
 {
-      Parameters::addListeners(parameters, this);
+    Parameters::addListeners(parameters, this);
 }
 
 SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
 
 //==============================================================================
 void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-      spectralCompressor.prepareToPlay();
+    spectralCompressor.prepareToPlay(sampleRate);
 }
 
 void SpectrixAudioProcessor::releaseResources() {}
 
 void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                           juce::MidiBuffer &midiMessages) {
-      juce::ScopedNoDenormals noDenormals;
-      spectralCompressor.processBlock(buffer);
+    juce::ScopedNoDenormals noDenormals;
+    spectralCompressor.processBlock(buffer);
 }
 
 bool SpectrixAudioProcessor::hasEditor() const {
-      return true; // (change this to false if you choose to not supply an editor)
+    return true; // (change this to false if you choose to not supply an editor)
 }
 
 juce::AudioProcessorEditor *SpectrixAudioProcessor::createEditor() {
-      return new SpectrixAudioProcessorEditor(*this);
+    return new SpectrixAudioProcessorEditor(*this);
 }
 
 void SpectrixAudioProcessor::getStateInformation(juce::MemoryBlock &destData) {
-      auto state = parameters.copyState();
-      std::unique_ptr<XmlElement> xml(state.createXml());
-      copyXmlToBinary(*xml, destData);
+    auto state = parameters.copyState();
+    std::unique_ptr<XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 void SpectrixAudioProcessor::setStateInformation(const void *data, int sizeInBytes) {
-      std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
-      if(xmlState.get() != nullptr)
-            if(xmlState->hasTagName(parameters.state.getType()))
-                  parameters.replaceState(ValueTree::fromXml(*xmlState));
+    std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+    if(xmlState.get() != nullptr)
+        if(xmlState->hasTagName(parameters.state.getType()))
+            parameters.replaceState(ValueTree::fromXml(*xmlState));
 }
 bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
-      if(layouts.getMainInputChannelSet() != AudioChannelSet::mono()
-         && layouts.getMainOutputChannelSet() != AudioChannelSet::mono())
-            return false;
+    if(layouts.getMainInputChannelSet() != AudioChannelSet::mono()
+       && layouts.getMainOutputChannelSet() != AudioChannelSet::mono())
+        return false;
 
-      if(layouts.getMainInputChannelSet() != layouts.getMainOutputChannelSet())
-            return false;
+    if(layouts.getMainInputChannelSet() != layouts.getMainOutputChannelSet())
+        return false;
 
-      if(layouts.inputBuses[1] != AudioChannelSet::mono()
-         && layouts.inputBuses[1] != AudioChannelSet::stereo()
-         && layouts.inputBuses[1] != AudioChannelSet::disabled())
-            return false;
+    if(layouts.inputBuses[1] != AudioChannelSet::mono()
+       && layouts.inputBuses[1] != AudioChannelSet::stereo()
+       && layouts.inputBuses[1] != AudioChannelSet::disabled())
+        return false;
 
-      return true;
+    return true;
 }
 
 void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
-      if(paramID == Parameters::magThreshold) {
-            spectralCompressor.setThreshold(newValue);
-      }
-      if(paramID == Parameters::spectrumAttack) {
-            if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor()))
-                  editor->updateSpectrumDetail(newValue);
-      }
+    if(paramID == Parameters::magThreshold) {
+        spectralCompressor.setThreshold(newValue);
+    }
+    if(paramID == Parameters::spectrumAttack) {
+        if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor()))
+            editor->updateSpectrumDetail(newValue);
+    }
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() { return new SpectrixAudioProcessor(); }
