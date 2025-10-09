@@ -66,7 +66,6 @@ class ResponseCurve : public juce::Component {
             float yPos = midY + sumY;
             sumPath.lineTo((float)x, yPos);
             sumPoints.push_back({(float)x, yPos});
-            // updateSampledCurve();
         }
 
         g.setColour(juce::Colours::yellow);
@@ -116,6 +115,7 @@ class ResponseCurve : public juce::Component {
             draggingIndex = (int)gaussians.size() - 1;
             initialMouseX = e.position.x;
             initialSigma = 0.15f;
+            updateSampledCurve();
         }
 
         lastClickTime = now;
@@ -220,10 +220,6 @@ class ResponseCurve : public juce::Component {
             }
 
             sampledCurve[i] = sumY;
-        }
-
-        for(auto i : sampledCurve) {
-            DBG(i);
         }
     }
 
