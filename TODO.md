@@ -1,9 +1,3 @@
-- Figure out where to call updateSampledCurve()
-- Implement mutex for compressor curve
-- Implementare la classe Spectral Compressor (comprix)
-- Come ottenere e scalare la curva di compressione da log a lin?
-- Algoritmo di comressione
-- Esporre parametri per la compressione
-- Astrarre componente per la curva di risposta
-- Refactoring
-- UI
+- Look at TODO COMMENTS AND FIXES
+- IMPLEMENT Proper Spectral Compressor
+- Implement GR visualizer

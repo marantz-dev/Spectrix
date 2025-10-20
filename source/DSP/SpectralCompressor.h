@@ -21,6 +21,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
 
         const float zeroDB_Reference = 500;
         // TODO: find out about the zeroDB reference
+
         for(size_t bin = 0; bin <= FFT_SIZE / 2; ++bin) {
             float frequency
              = (static_cast<float>(bin) / FFT_SIZE) * static_cast<float>(this->sampleRate);
@@ -36,6 +37,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
                 float real = transformedBuffer[bin];
                 float imag = transformedBuffer[bin + FFT_SIZE];
                 magnitude = std::sqrt(real * real + imag * imag);
+                // FIX: Avoid ATAN2
                 phase = std::atan2(imag, real);
             }
 

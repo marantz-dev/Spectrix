@@ -57,7 +57,8 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
             //
             //
 
-            float y = juce::jmap(magnitudeDB, -80.0f, 10.0f, static_cast<float>(bounds.getBottom()),
+            // FIX: SCALING MUST MATCH RESPONSE CURVE
+            float y = juce::jmap(magnitudeDB, -48.0f, 48.0f, static_cast<float>(bounds.getBottom()),
                                  static_cast<float>(bounds.getY()));
 
             points.emplace_back(x, y);

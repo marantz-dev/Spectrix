@@ -231,6 +231,7 @@ class ResponseCurve : public juce::Component {
     juce::Point<float> dragOffset;
 
     double sampleRate = 44100.0;
+    // TODO: FIX DB SCALING TO MATCH SPECTRUM
     const float minDB = -48.0f;
     const float maxDB = 48.0f;
     double minFreq = 20.0;
