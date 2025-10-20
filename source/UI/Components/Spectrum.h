@@ -1,12 +1,12 @@
 #pragma once
 #include <JuceHeader.h>
 #include <cstddef>
-#include "SpectralProcessors.h"
+#include "FFTProcessor.h"
 #include "juce_graphics/juce_graphics.h"
 
 template <int FFTSize> class SpectrumDisplay : public juce::Component, private juce::Timer {
   public:
-    SpectrumDisplay(SpectralProcessor<FFTSize> &spectralProcessor, const double sampleRateHz)
+    SpectrumDisplay(FFTProcessor<FFTSize> &spectralProcessor, const double sampleRateHz)
         : processor(spectralProcessor), sampleRate(sampleRateHz) {
         magnitudes.resize(processor.getMagnitudes().size(), -100.0f);
         startTimerHz(60);
@@ -145,7 +145,7 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         }
     }
 
-    SpectralProcessor<FFTSize> &processor;
+    FFTProcessor<FFTSize> &processor;
     std::vector<float> magnitudes;
     double sampleRate;
     float spectrumAttack = 0.2f;

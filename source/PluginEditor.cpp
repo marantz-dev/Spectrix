@@ -4,17 +4,12 @@
 
 SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p),
-      spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()) {
+      spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()),
+      responseCurve(audioProcessor.responseCurve, audioProcessor.getSampleRate()) {
     // Constructor
     setSize(1000, 600);
     addAndMakeVisible(spectrumDisplay);
     spectrumDisplay.setBounds(getLocalBounds());
-
-    // #######################################
-    // #                                     #
-    // #  UNCOMMENT THIS FOR RESPONSE CURVE  #
-    // #                                     #
-    // #######################################
 
     addAndMakeVisible(responseCurve);
     responseCurve.setBounds(getLocalBounds());

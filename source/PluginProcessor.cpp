@@ -7,6 +7,7 @@ SpectrixAudioProcessor::SpectrixAudioProcessor()
     : AudioProcessor(BusesProperties()
                       .withInput("Input", AudioChannelSet::stereo(), true)
                       .withOutput("Output", AudioChannelSet::stereo(), true)),
+      spectralCompressor(responseCurve),
       parameters(*this, nullptr, "PLG", Parameters::createParameterLayout())
 
 {
@@ -65,9 +66,7 @@ bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 }
 
 void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
-    if(paramID == Parameters::magThreshold) {
-        spectralCompressor.setThreshold(newValue);
-    }
+    if(paramID == Parameters::magThreshold) {}
     if(paramID == Parameters::spectrumAttack) {
         if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor()))
             editor->updateSpectrumDetail(newValue);
