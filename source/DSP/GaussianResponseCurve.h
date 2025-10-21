@@ -1,8 +1,6 @@
 #pragma once
 
-#include "PluginParameters.h"
 #include <JuceHeader.h>
-#include <array>
 #include <cstddef>
 #include <vector>
 
@@ -22,16 +20,9 @@ class GaussianResponseCurve {
 
     void deletePeak(size_t index) {
         const std::lock_guard<std::mutex> lock(mutex);
-        if(index < gaussians.size()) {
+        if(index < gaussians.size())
             gaussians.erase(gaussians.begin() + index);
-        }
     }
-
-    // void updatePeak(int index, GaussianPeak newPeak) {
-    //     const std::lock_guard<std::mutex> lock(mutex);
-    //     if(index < gaussians.size())
-    //         gaussians[index] = newPeak;
-    // }
 
     std::vector<GaussianPeak> &getGaussianPeaks() {
         std::lock_guard<std::mutex> lock(mutex);

@@ -18,8 +18,8 @@ cpmaddpackage(
   SOURCE_DIR /Applications/JUCE/
 )
 # Add compiler warning utilities
-include(cmake/CompilerWarnings.cmake)
-include(cmake/Util.cmake)
-
+# include(cmake/CompilerWarnings.cmake)
+# include(cmake/Util.cmake)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Adds all the targets configured in the "plugin" folder.
 add_subdirectory(source)

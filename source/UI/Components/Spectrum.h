@@ -3,6 +3,7 @@
 #include <cstddef>
 #include "FFTProcessor.h"
 #include "juce_graphics/juce_graphics.h"
+#include "PluginParameters.h"
 
 template <int FFTSize> class SpectrumDisplay : public juce::Component, private juce::Timer {
   public:
@@ -11,8 +12,6 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         magnitudes.resize(processor.getMagnitudes().size(), -100.0f);
         startTimerHz(60);
     }
-
-    void updateSpectrumDetail(float newAttack) { spectrumAttack = newAttack; }
 
     void paint(juce::Graphics &g) override {
         g.fillAll(juce::Colours::black);
@@ -40,12 +39,15 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
              = bounds.getX()
                + juce::jmap(logFreq, logMin, logMax, 0.0f, static_cast<float>(bounds.getWidth()));
 
-            float magnitudeDB = magnitudes[i];
-            magnitudeDB = juce::jlimit(-80.0f, 10.0f, magnitudeDB);
+            float magnitudeDB = magnitudes[i]; // Already in dB from updateMagnitudes
 
-            //
-            //
-            //
+            // Clamp to display range
+            magnitudeDB
+             = juce::jlimit(Parameters::minDBVisualizer, Parameters::maxDBVisualizer, magnitudeDB);
+            float y = juce::jmap(
+             magnitudeDB, Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
+             static_cast<float>(bounds.getBottom()), static_cast<float>(bounds.getY()));
+
             // ########## POSSIBLE IMPLEMENTATION OF TILTING ##########
             //
             // float tiltPerOct = 4.5f; // dB per octave
@@ -56,15 +58,11 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
             //
             //
             //
-
-            // FIX: SCALING MUST MATCH RESPONSE CURVE
-            float y = juce::jmap(magnitudeDB, -48.0f, 48.0f, static_cast<float>(bounds.getBottom()),
-                                 static_cast<float>(bounds.getY()));
+            // Map to screen coordinates (bottom = -96dB, top = +6dB)
 
             points.emplace_back(x, y);
         }
-
-        smoothPoints(points);
+        spectralSmoothing(points);
         spectrumPath.startNewSubPath(points[0]);
 
         for(size_t i = 1; i < points.size(); ++i) {
@@ -101,14 +99,16 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         g.setColour(juce::Colours::cyan);
     }
 
+    void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; }
+
   private:
     void timerCallback() override { repaint(); }
 
-    void smoothPoints(std::vector<juce::Point<float>> &points) {
+    void spectralSmoothing(std::vector<juce::Point<float>> &points) {
         if(points.size() < 3)
             return;
 
-        const float smoothingCoeff = spectrumAttack;
+        const float smoothingCoeff = 0.5f;
 
         // Lambda for the smoothing operation
         auto applySmoothing = [&](float &state, float input) {
@@ -132,8 +132,8 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     }
 
     void updateMagnitudes(const auto &newMagnitudes) {
-        const float attackCoeff = 0.2f;
-        const float releaseCoeff = 0.005f;
+        const float attackCoeff = 0.1f;
+        const float releaseCoeff = 0.05f;
 
         for(size_t i = 0; i < newMagnitudes.size() && i < magnitudes.size(); ++i) {
             float magnitudeDB
@@ -149,5 +149,5 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     FFTProcessor<FFTSize> &processor;
     std::vector<float> magnitudes;
     double sampleRate;
-    float spectrumAttack = 0.2f;
+    // float spectrumAttack = 0.2f;
 };

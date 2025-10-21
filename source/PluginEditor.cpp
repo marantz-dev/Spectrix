@@ -5,11 +5,15 @@
 SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p),
       spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()),
+      gainReaductionVisualizer(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()),
       responseCurve(audioProcessor.responseCurve, audioProcessor.getSampleRate()) {
     // Constructor
     setSize(1000, 600);
     addAndMakeVisible(spectrumDisplay);
     spectrumDisplay.setBounds(getLocalBounds());
+
+    addAndMakeVisible(gainReaductionVisualizer);
+    gainReaductionVisualizer.setBounds(getLocalBounds());
 
     addAndMakeVisible(responseCurve);
     responseCurve.setBounds(getLocalBounds());
@@ -18,7 +22,7 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
 SpectrixAudioProcessorEditor::~SpectrixAudioProcessorEditor() {}
 
 void SpectrixAudioProcessorEditor::updateSpectrumDetail(float newAttack) {
-    spectrumDisplay.updateSpectrumDetail(newAttack);
+    // spectrumDisplay.updateSpectrumDetail(newAttack);
 }
 
 void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {

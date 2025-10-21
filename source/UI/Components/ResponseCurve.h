@@ -16,11 +16,12 @@ class ResponseCurve : public juce::Component {
     void paint(juce::Graphics &g) override {
         auto bounds = getLocalBounds().toFloat();
 
-        updateGuiPeaks(bounds); // recompute every frame
+        updateGuiPeaks(bounds);
 
         drawGaussianCurves(g, bounds);
         drawSumOfGaussians(g);
         drawGaussianPeaks(g);
+        drawZeroDbLine(g, bounds);
     }
 
     // ##################
@@ -37,7 +38,7 @@ class ResponseCurve : public juce::Component {
         // find nearest peak within 10px
         for(size_t i = 0; i < guiGaussians.size(); ++i) {
             auto &peak = guiGaussians[i];
-            float dist = pos.getDistanceFrom(Point<float>(peak.peakX, peak.peakY));
+            float dist = pos.getDistanceFrom(juce::Point<float>(peak.peakX, peak.peakY));
             if(dist <= 10.0f) {
                 clickedOnPeak = true;
                 draggedPeakIndex = (int)i;
@@ -56,7 +57,6 @@ class ResponseCurve : public juce::Component {
                 float logFreq = juce::jmap<float>(event.position.x, bounds.getX(),
                                                   bounds.getRight(), (float)logMin, (float)logMax);
                 float frequency = std::pow(10.0f, logFreq);
-                auto &peakData = responseCurve.getGaussianPeaks();
                 float middleY = bounds.getCentreY();
                 float gainDB;
                 if(event.position.y <= middleY)
@@ -123,6 +123,7 @@ class ResponseCurve : public juce::Component {
         float peakY;
         float sigma;
         float peakDB;
+        float frequency; // Add frequency for calculation
     };
 
     void updateGuiPeaks(juce::Rectangle<float> bounds) {
@@ -139,9 +140,9 @@ class ResponseCurve : public juce::Component {
             if(p.gainDB >= 0)
                 py = juce::jmap<float>(p.gainDB, 0.0f, maxDB, middleY, bounds.getY());
             else
-                py = juce::jmap<float>(p.gainDB, minDB, 0.0f, getBottom(), middleY);
+                py = juce::jmap<float>(p.gainDB, minDB, 0.0f, bounds.getBottom(), middleY);
 
-            guiGaussians.push_back({px, py, p.sigmaNorm * bounds.getWidth(), p.gainDB});
+            guiGaussians.push_back({px, py, p.sigmaNorm, p.gainDB, p.frequency});
         }
     }
 
@@ -156,16 +157,35 @@ class ResponseCurve : public juce::Component {
 
         for(auto &gaussian : guiGaussians) {
             juce::Path path;
-            path.startNewSubPath(bounds.getX(), middleY);
+            bool firstPoint = true;
 
-            float denom = 1.0f / (gaussian.sigma * std::sqrt(2.0f * std::numbers::pi));
-
+            // Draw in log-frequency space to match DSP
             for(int x = 0; x <= (int)bounds.getWidth(); x += 2) {
-                float dx = x - gaussian.peakX;
-                float gaussVal
-                 = denom * std::exp(-(dx * dx) / (2.0f * gaussian.sigma * gaussian.sigma));
-                float y = middleY - gaussVal / denom * (middleY - gaussian.peakY);
-                path.lineTo((float)x, y);
+                // Convert pixel X to log frequency
+                float logFreq = juce::jmap<float>((float)x, 0.0f, bounds.getWidth(), (float)logMin,
+                                                  (float)logMax);
+                float peakLogFreq = std::log10(gaussian.frequency);
+
+                // Calculate Gaussian in log-frequency space
+                float dx = logFreq - peakLogFreq;
+                float exponent = -0.5f * (dx * dx) / (gaussian.sigma * gaussian.sigma);
+                float gaussianValue = std::exp(exponent);
+                float valueDB = gaussian.peakDB * gaussianValue;
+
+                float y = juce::jmap(valueDB, minDB, maxDB, bounds.getBottom(), bounds.getY());
+                // Map dB to Y position
+                // float y;
+                // if(valueDB >= 0)
+                //     y = juce::jmap(valueDB, 0.0f, maxDB, middleY, bounds.getY());
+                // else
+                //     y = juce::jmap(valueDB, minDB, 0.0f, bounds.getBottom(), middleY);
+
+                if(firstPoint) {
+                    path.startNewSubPath(bounds.getX() + x, y);
+                    firstPoint = false;
+                } else {
+                    path.lineTo(bounds.getX() + x, y);
+                }
             }
 
             g.setColour(juce::Colours::aliceblue.withAlpha(0.2f));
@@ -181,24 +201,30 @@ class ResponseCurve : public juce::Component {
         juce::Path path;
         float middleY = bounds.getCentreY();
 
-        // Step across the screen
+        // Step across the screen in log-frequency space
         for(int x = 0; x <= bounds.getWidth(); ++x) {
+            // Convert pixel X to frequency
+            float logFreq
+             = juce::jmap<float>((float)x, 0.0f, bounds.getWidth(), (float)logMin, (float)logMax);
+
             float sumDB = 0.0f;
 
-            // Sum each gaussian in dB space
+            // Sum each Gaussian in log-frequency space (matches DSP)
             for(const auto &gauss : guiGaussians) {
-                float dx = x - gauss.peakX;
+                float peakLogFreq = std::log10(gauss.frequency);
+                float dx = logFreq - peakLogFreq;
                 float exponent = -0.5f * (dx * dx) / (gauss.sigma * gauss.sigma);
-                float valueDB = gauss.peakDB * std::exp(exponent); // gain curve
-                sumDB += valueDB;
+                float gaussianValue = std::exp(exponent);
+                sumDB += gauss.peakDB * gaussianValue;
             }
 
-            // Convert sumDB to Y pixel position:
-            float y;
-            if(sumDB >= 0)
-                y = juce::jmap(sumDB, 0.0f, maxDB, middleY, bounds.getY());
-            else
-                y = juce::jmap(sumDB, minDB, 0.0f, bounds.getBottom(), middleY);
+            // Convert sumDB to Y pixel position
+            float y = juce::jmap(sumDB, minDB, maxDB, bounds.getBottom(), bounds.getY());
+            // float y;
+            // if(sumDB >= 0)
+            //     y = juce::jmap(sumDB, 0.0f, maxDB, middleY, bounds.getY());
+            // else
+            //     y = juce::jmap(sumDB, minDB, 0.0f, bounds.getBottom(), middleY);
 
             if(x == 0)
                 path.startNewSubPath(bounds.getX() + x, y);
@@ -209,11 +235,25 @@ class ResponseCurve : public juce::Component {
         g.setColour(juce::Colours::orange.withAlpha(0.8f));
         g.strokePath(path, juce::PathStrokeType(2.0f));
     }
+
     void drawGaussianPeaks(juce::Graphics &g) {
         for(auto &peak : guiGaussians) {
             g.setColour(juce::Colours::yellow);
             g.fillEllipse(peak.peakX - 4.0f, peak.peakY - 4.0f, 8.0f, 8.0f);
         }
+    }
+
+    void drawZeroDbLine(juce::Graphics &g, juce::Rectangle<float> bounds) {
+        // Draw 0 dB reference line
+        g.setColour(juce::Colours::white.withAlpha(0.3f));
+        float zeroY = bounds.getCentreY();
+        g.drawHorizontalLine((int)zeroY, bounds.getX(), bounds.getRight());
+
+        // Optional: label it
+        g.setColour(juce::Colours::white.withAlpha(0.5f));
+        g.setFont(10.0f);
+        g.drawText("0 dB", bounds.getRight() - 40, zeroY - 15, 35, 15,
+                   juce::Justification::centredRight);
     }
 
     void updateLogFreqBounds() {
@@ -231,9 +271,8 @@ class ResponseCurve : public juce::Component {
     juce::Point<float> dragOffset;
 
     double sampleRate = 44100.0;
-    // TODO: FIX DB SCALING TO MATCH SPECTRUM
-    const float minDB = -48.0f;
-    const float maxDB = 48.0f;
+    const float minDB = -96.0f; // More attenuation range
+    const float maxDB = 6.0f;   // Less boost range (more practical)
     double minFreq = 20.0;
     double maxFreq = 22050.0;
     double logMin = std::log10(20.0);

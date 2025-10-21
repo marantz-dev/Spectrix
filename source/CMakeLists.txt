@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 project(Spectrix VERSION 0.0.1)
+set(JUCE_DISABLE_ADHOC_CODE_SIGNING ON)
 
 juce_add_plugin(
   Spectrix
@@ -12,7 +13,6 @@ juce_add_plugin(
   NEEDS_MIDI_OUTPUT FALSE
   EDITOR_WANTS_KEYBOARD_FOCUS TRUE
 )
-
 juce_generate_juce_header(Spectrix)
 
 # Automatically add all source and header files
@@ -36,7 +36,7 @@ target_link_libraries(Spectrix
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
-        juce::juce_recommended_warning_flags
+        # juce::juce_recommended_warning_flags
 )
 
 # Include directories for headers

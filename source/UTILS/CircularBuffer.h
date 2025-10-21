@@ -29,7 +29,7 @@ template <typename TYPE, size_t SIZE> class CircularBuffer {
         jassert(index < count);
         return buffer[(readIndex + index) % SIZE];
     }
-    float clear() {
+    void clear() {
         writeIndex = 0;
         readIndex = 0;
         count = 0;

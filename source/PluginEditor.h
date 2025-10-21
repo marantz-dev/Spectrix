@@ -4,6 +4,7 @@
 #include <JuceHeader.h>
 #include "Spectrum.h"
 #include "PluginParameters.h"
+#include "GainReductionVisualizer.h"
 #include "ResponseCurve.h"
 
 class SpectrixAudioProcessorEditor : public juce::AudioProcessorEditor {
@@ -20,6 +21,7 @@ class SpectrixAudioProcessorEditor : public juce::AudioProcessorEditor {
   private:
     SpectrixAudioProcessor &audioProcessor;
     SpectrumDisplay<Parameters::FFT_SIZE> spectrumDisplay;
+    SpectralGainReductionVisualizer<Parameters::FFT_SIZE> gainReaductionVisualizer;
     ResponseCurve responseCurve;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrixAudioProcessorEditor)
