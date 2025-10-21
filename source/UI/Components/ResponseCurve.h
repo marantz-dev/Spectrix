@@ -2,6 +2,7 @@
 
 #include "GaussianResponseCurve.h"
 #include "PluginParameters.h"
+#include "UIUtilities.h"
 #include "juce_graphics/juce_graphics.h"
 #include <JuceHeader.h>
 #include <vector>
@@ -18,6 +19,7 @@ class ResponseCurve : public juce::Component {
 
     void paint(juce::Graphics &g) override {
         responseCurveShiftDB = responseCurve.getResponseCurveShiftDB();
+        drawGaussianCurves(g);
         drawSumOfGaussians(g);
         drawGaussianPeaks(g);
     }
@@ -52,11 +54,14 @@ class ResponseCurve : public juce::Component {
             if(clickedOnPeak) {
                 responseCurve.deletePeak((size_t)draggedPeakIndex);
                 draggedPeakIndex = -1;
+                if(gaussians.empty()) {
+                    responseCurve.addPeak({1000.0f, 0.0f, 0.25f});
+                }
             } else {
                 float logFreq = xToLogFrequency(event.position.x);
                 float frequency = std::pow(10.0f, logFreq);
                 float gainDB = inverseDBWarp(event.position.y, bounds) - responseCurveShiftDB;
-                responseCurve.addPeak({frequency, gainDB, 0.05f});
+                responseCurve.addPeak({frequency, gainDB, 0.15f});
             }
         }
 
@@ -119,23 +124,6 @@ class ResponseCurve : public juce::Component {
         float logFreq = std::log10(frequency);
         return juce::jmap<float>(logFreq, (float)logMin, (float)logMax, bounds.getX(),
                                  bounds.getRight());
-    }
-
-    float DBWarp(float magnitudeDB) const {
-        float norm = juce::jmap(magnitudeDB, minDB, maxDB, 0.0f, 1.0f);
-        float x = (norm - 0.44f) * 5.0f;
-        float sigmoid = 1.0f / (1.0f + std::exp(-x));
-        return juce::jmap(sigmoid, 0.0f, 1.0f, minDB, maxDB);
-    }
-
-    float inverseDBWarp(float yPos, juce::Rectangle<float> bounds) const {
-        float warpedDB = juce::jmap(yPos, bounds.getBottom(), bounds.getY(), minDB, maxDB);
-        float sigmoid = juce::jmap(warpedDB, minDB, maxDB, 0.0f, 1.0f);
-        sigmoid = juce::jlimit(0.001f, 0.999f, sigmoid);
-        float x = -std::log(1.0f / sigmoid - 1.0f);
-        float norm = (x / 5.0f) + 0.44f;
-        norm = juce::jlimit(0.0f, 1.0f, norm);
-        return juce::jmap(norm, 0.0f, 1.0f, minDB, maxDB);
     }
 
     float gaussianAtLogFrequency(float logFrequency, const GaussianPeak &gaussian) const {

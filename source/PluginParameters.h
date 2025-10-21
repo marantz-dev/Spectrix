@@ -13,8 +13,8 @@ namespace Parameters {
 
     static const float minDBVisualizer = -80.0f;
     static const float maxDBVisualizer = 6.0f;
-    static const float warpMidPoint = 0.3f;
-    static const float warpSteepness = 2.0f;
+    static const float warpMidPoint = 0.4f;
+    static const float warpSteepness = 0.0f;
 
     static const float responseCurveShiftDB = -10.0f;
     static const String responseCurveShiftDBID = "CS";
