@@ -16,7 +16,8 @@ namespace Parameters {
     static const float warpMidPoint = 0.3f;
     static const float warpSteepness = 2.0f;
 
-    static const float responseCurveShiftDB = -12.0f;
+    static const float responseCurveShiftDB = -10.0f;
+    static const String responseCurveShiftDBID = "CS";
 
     static AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
         int id = 0;
@@ -25,6 +26,10 @@ namespace Parameters {
         params.push_back(std::make_unique<AudioParameterFloat>(
          ParameterID("MT", id++), "Magnitude Threshold",
          NormalisableRange<float>(0.001f, 1.0f, 0.001, 1.0), defaultThresholdValue));
+
+        params.push_back(std::make_unique<AudioParameterFloat>(
+         ParameterID("CS", id++), "Response Curve Shift DB",
+         NormalisableRange<float>(-80.0f, 0.0f, 0.001, 1.0), responseCurveShiftDB));
 
         params.push_back(std::make_unique<AudioParameterFloat>(
          ParameterID("SA", id++), "Spectrum Detail",

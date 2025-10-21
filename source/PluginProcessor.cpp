@@ -67,9 +67,9 @@ bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
     if(paramID == Parameters::magThreshold) {}
-    if(paramID == Parameters::spectrumAttack) {
-        if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor()))
-            editor->updateSpectrumDetail(newValue);
+    if(paramID == Parameters::spectrumAttack) {}
+    if(paramID == Parameters::responseCurveShiftDBID) {
+        responseCurve.setResponseCurveShiftDB(newValue);
     }
 }
 

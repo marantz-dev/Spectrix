@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PluginParameters.h"
 #include <JuceHeader.h>
 #include <cstddef>
 #include <vector>
@@ -29,7 +30,14 @@ class GaussianResponseCurve {
         return gaussians;
     }
 
+    void setResponseCurveShiftDB(float newShiftDB) {
+        const std::lock_guard<std::mutex> lock(mutex);
+        responseCurveShiftDB = newShiftDB;
+    }
+    float getResponseCurveShiftDB() const { return responseCurveShiftDB; }
+
   private:
+    float responseCurveShiftDB = Parameters::responseCurveShiftDB;
     mutable std::mutex mutex;
     std::vector<GaussianPeak> gaussians;
 };

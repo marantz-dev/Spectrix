@@ -79,6 +79,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     }
 
     float calculateGaussianSum(float frequency, const std::vector<GaussianPeak> &peaks) {
+        responseCurveShiftDB = responseCurve.getResponseCurveShiftDB();
         // Work in log-frequency space (same as ResponseCurve)
         float logFreq = std::log10(frequency);
         float sumDB = 0.0f;
@@ -95,13 +96,14 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
             sumDB += peak.gainDB * gaussianValue;
         }
 
-        return sumDB + Parameters::responseCurveShiftDB;
+        return sumDB + responseCurveShiftDB;
     }
 
     std::array<float, (size_t)FFT_SIZE / 2 + 1> gainReductionArray{};
 
     GaussianResponseCurve &responseCurve;
     mutable juce::SpinLock thresholdMutex;
+    float responseCurveShiftDB = Parameters::responseCurveShiftDB;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralCompressor)
 };
