@@ -11,8 +11,12 @@ namespace Parameters {
     static const float defaultThresholdValue = 0.8f;
     static const float defaultSpectrumDetail = 0.6f;
 
-    static const float minDBVisualizer = -96.0f;
-    static const float maxDBVisualizer = -10.0f;
+    static const float minDBVisualizer = -80.0f;
+    static const float maxDBVisualizer = 6.0f;
+    static const float warpMidPoint = 0.3f;
+    static const float warpSteepness = 2.0f;
+
+    static const float responseCurveShiftDB = -12.0f;
 
     static AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
         int id = 0;

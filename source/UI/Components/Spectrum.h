@@ -42,12 +42,23 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
             float magnitudeDB = magnitudes[i]; // Already in dB from updateMagnitudes
 
             // Clamp to display range
+            // magnitudeDB
+            //  = juce::jlimit(Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
+            //  magnitudeDB);
+            // float y = juce::jmap(
+            //  magnitudeDB, Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
+            //  static_cast<float>(bounds.getBottom()), static_cast<float>(bounds.getY()));
+            // Clamp first
             magnitudeDB
              = juce::jlimit(Parameters::minDBVisualizer, Parameters::maxDBVisualizer, magnitudeDB);
-            float y = juce::jmap(
-             magnitudeDB, Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
-             static_cast<float>(bounds.getBottom()), static_cast<float>(bounds.getY()));
 
+            // Apply warping
+            float warpedDB = applyDBWarping(magnitudeDB);
+
+            // Map warped value to screen
+            float y = juce::jmap(warpedDB, Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
+                                 static_cast<float>(bounds.getBottom()),
+                                 static_cast<float>(bounds.getY()));
             // ########## POSSIBLE IMPLEMENTATION OF TILTING ##########
             //
             // float tiltPerOct = 4.5f; // dB per octave
@@ -104,6 +115,18 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
   private:
     void timerCallback() override { repaint(); }
 
+    float applyDBWarping(float magnitudeDB) const {
+        // Normalize to 0-1 range
+        float norm = juce::jmap(magnitudeDB, minDB, maxDB, 0.0f, 1.0f);
+
+        // Apply sigmoid warping (focus on middle range around -25dB)
+        // Midpoint at 0.44 corresponds to approximately -25dB in the -60 to +20 range
+        float x = (norm - 0.44f) * 5.0f;
+        float sigmoid = 1.0f / (1.0f + std::exp(-x));
+
+        // Map back to dB range
+        return juce::jmap(sigmoid, 0.0f, 1.0f, minDB, maxDB);
+    }
     void spectralSmoothing(std::vector<juce::Point<float>> &points) {
         if(points.size() < 3)
             return;
@@ -132,7 +155,7 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     }
 
     void updateMagnitudes(const auto &newMagnitudes) {
-        const float attackCoeff = 0.1f;
+        const float attackCoeff = 0.5f;
         const float releaseCoeff = 0.05f;
 
         for(size_t i = 0; i < newMagnitudes.size() && i < magnitudes.size(); ++i) {
@@ -149,5 +172,7 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     FFTProcessor<FFTSize> &processor;
     std::vector<float> magnitudes;
     double sampleRate;
+    float minDB = Parameters::minDBVisualizer;
+    float maxDB = Parameters::maxDBVisualizer;
     // float spectrumAttack = 0.2f;
 };

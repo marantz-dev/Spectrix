@@ -2,6 +2,7 @@
 
 #include "FFTProcessor.h"
 #include "GaussianResponseCurve.h"
+#include "PluginParameters.h"
 #include <JuceHeader.h>
 #include <array>
 #include <cstddef>
@@ -94,7 +95,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
             sumDB += peak.gainDB * gaussianValue;
         }
 
-        return sumDB;
+        return sumDB + Parameters::responseCurveShiftDB;
     }
 
     std::array<float, (size_t)FFT_SIZE / 2 + 1> gainReductionArray{};

@@ -1,3 +1,3 @@
-- Look at TODO COMMENTS AND FIXES
-- IMPLEMENT Proper Spectral Compressor
-- Implement GR visualizer
+- Fix Y scaling issue
+- Implement curve shifting logic
+- CHeck prepare to plays and release resources
