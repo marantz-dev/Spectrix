@@ -28,7 +28,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         const float nyquist = static_cast<float>(this->sampleRate) * 0.5f;
 
         // Match the scaling from your storeMagnitudes function
-        constexpr float windowComp = 0.49f; // Hann window compensation
+        constexpr float windowComp = 0.49f;
         const float scale = (2.0f / FFT_SIZE) * windowComp;
         const float dcNyquistScale = (1.0f / FFT_SIZE) * windowComp;
 

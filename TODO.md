@@ -1,3 +1,3 @@
 - Fix Y scaling issue
-- Implement curve shifting logic
+- Check to update sample rates
 - CHeck prepare to plays and release resources

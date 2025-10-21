@@ -32,7 +32,6 @@ class ResponseCurve : public juce::Component {
         auto pos = event.position;
         bool clickedOnPeak = false;
 
-        // find nearest peak within 10px
         for(size_t i = 0; i < gaussians.size(); ++i) {
             auto &peak = gaussians[i];
             float peakX = logFrequencyToX(peak.frequency);
@@ -60,6 +59,7 @@ class ResponseCurve : public juce::Component {
                 responseCurve.addPeak({frequency, gainDB, 0.05f});
             }
         }
+
         lastClickTime = now;
         lastClickPos = event.position;
         repaint();
@@ -71,7 +71,6 @@ class ResponseCurve : public juce::Component {
             auto &peak = gaussians[draggedPeakIndex];
 
             if(!event.mods.isShiftDown()) {
-                // Dragging position (frequency and gain)
                 float newX = event.position.x - dragOffset.x;
                 newX = juce::jlimit(bounds.getX(), bounds.getRight(), newX);
 
@@ -81,23 +80,16 @@ class ResponseCurve : public juce::Component {
                 float newY = event.position.y - dragOffset.y;
                 newY = juce::jlimit(bounds.getY(), bounds.getBottom(), newY);
 
-                // Inverse warp the Y position and subtract the shift to get actual dB value
                 float gainDB = inverseDBWarp(newY, bounds) - responseCurveShiftDB;
-
-                // Update the peak
                 gaussians[draggedPeakIndex].frequency = newFrequency;
                 gaussians[draggedPeakIndex].gainDB = gainDB;
             } else {
-                // Shift-dragging to adjust sigma (width) - relative adjustment
                 float deltaX = event.position.x - event.mouseDownPosition.x;
                 float sigmaChange = deltaX / bounds.getWidth() * 0.5f;
                 float newSigma = initialSigma + sigmaChange;
                 newSigma = juce::jlimit(0.001f, 2.0f, newSigma);
-
-                // Update the peak with new sigma
                 gaussians[draggedPeakIndex].sigmaNorm = newSigma;
             }
-
             repaint();
         }
     }

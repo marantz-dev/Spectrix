@@ -32,47 +32,23 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         float maxFreq = nyquistFreq;
         float logMin = std::log10(minFreq);
         float logMax = std::log10(maxFreq);
+
         for(size_t i = 1; i < magnitudes.size(); ++i) {
             float frequency = (i * nyquistFreq) / (magnitudes.size() - 1);
             float logFreq = std::log10(frequency);
             float x
              = bounds.getX()
                + juce::jmap(logFreq, logMin, logMax, 0.0f, static_cast<float>(bounds.getWidth()));
-
             float magnitudeDB = magnitudes[i]; // Already in dB from updateMagnitudes
-
-            // Clamp to display range
-            // magnitudeDB
-            //  = juce::jlimit(Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
-            //  magnitudeDB);
-            // float y = juce::jmap(
-            //  magnitudeDB, Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
-            //  static_cast<float>(bounds.getBottom()), static_cast<float>(bounds.getY()));
-            // Clamp first
             magnitudeDB
              = juce::jlimit(Parameters::minDBVisualizer, Parameters::maxDBVisualizer, magnitudeDB);
-
-            // Apply warping
             float warpedDB = applyDBWarping(magnitudeDB);
-
-            // Map warped value to screen
             float y = juce::jmap(warpedDB, Parameters::minDBVisualizer, Parameters::maxDBVisualizer,
                                  static_cast<float>(bounds.getBottom()),
                                  static_cast<float>(bounds.getY()));
-            // ########## POSSIBLE IMPLEMENTATION OF TILTING ##########
-            //
-            // float tiltPerOct = 4.5f; // dB per octave
-            // float refFreq = 1000.0f; // reference frequency (usually 1kHz)
-            //
-            // float octaves = std::log2(frequency / refFreq);
-            // magnitudeDB += tiltPerOct * octaves;
-            //
-            //
-            //
-            // Map to screen coordinates (bottom = -96dB, top = +6dB)
-
             points.emplace_back(x, y);
         }
+
         spectralSmoothing(points);
         spectrumPath.startNewSubPath(points[0]);
 
@@ -174,5 +150,4 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     double sampleRate;
     float minDB = Parameters::minDBVisualizer;
     float maxDB = Parameters::maxDBVisualizer;
-    // float spectrumAttack = 0.2f;
 };
