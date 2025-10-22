@@ -53,6 +53,7 @@ class SpectrixAudioProcessor : public juce::AudioProcessor,
 
     float inputGain = 1.0f;
     float outputGain = 1.0f;
+    bool isGainLinked = true;
 
   private:
     void parameterChanged(const String &paramID, float newValue) override;

@@ -1,3 +1,4 @@
 - Fix Y scaling issue
 - Check to update sample rates
 - CHeck prepare to plays and release resources
+- Set Formal Latecy???

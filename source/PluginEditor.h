@@ -21,6 +21,7 @@ class SpectrixAudioProcessorEditor : public juce::AudioProcessorEditor {
   private:
     SpectrixAudioProcessor &audioProcessor;
     SpectrumDisplay<Parameters::FFT_SIZE> spectrumDisplay;
+    // DrySpectrumDisplay<Parameters::FFT_SIZE> drySpectrumDisplay;
     SpectralGainReductionVisualizer<Parameters::FFT_SIZE> gainReaductionVisualizer;
     ResponseCurve responseCurve;
 

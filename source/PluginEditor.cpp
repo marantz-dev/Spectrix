@@ -5,10 +5,15 @@
 SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p),
       spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()),
+      // drySpectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()),
       gainReaductionVisualizer(audioProcessor.spectralCompressor, audioProcessor.getSampleRate()),
       responseCurve(audioProcessor.responseCurve, audioProcessor.getSampleRate()) {
     // Constructor
     setSize(1000, 600);
+
+    // addAndMakeVisible(drySpectrumDisplay);
+    // drySpectrumDisplay.setBounds(getLocalBounds());
+
     addAndMakeVisible(spectrumDisplay);
     spectrumDisplay.setBounds(getLocalBounds());
 
@@ -26,9 +31,8 @@ void SpectrixAudioProcessorEditor::updateSpectrumDetail(float newAttack) {
 }
 
 void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+    g.fillAll(juce::Colours::black);
     g.setFont(juce::FontOptions(15.0f));
-    g.drawFittedText("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void SpectrixAudioProcessorEditor::resized() {}

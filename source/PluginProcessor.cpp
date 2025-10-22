@@ -32,9 +32,7 @@ void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     buffer.applyGain(outputGain);
 }
 
-bool SpectrixAudioProcessor::hasEditor() const {
-    return true; // (change this to false if you choose to not supply an editor)
-}
+bool SpectrixAudioProcessor::hasEditor() const { return true; }
 
 juce::AudioProcessorEditor *SpectrixAudioProcessor::createEditor() {
     return new SpectrixAudioProcessorEditor(*this);
@@ -69,14 +67,6 @@ bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 }
 
 void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
-    if(paramID == Parameters::magThreshold) {
-        // Handle magnitude threshold change
-    }
-
-    if(paramID == Parameters::spectrumAttack) {
-        // Handle spectrum detail change
-    }
-
     if(paramID == Parameters::responseCurveShiftDBID) {
         responseCurve.setResponseCurveShiftDB(newValue);
     }
@@ -98,7 +88,6 @@ void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newVa
     }
 
     if(paramID == Parameters::isClipperID) {
-        // newValue will be 0.0f or 1.0f for bool parameters
         spectralCompressor.setClipperActive(newValue >= 0.5f);
     }
 

@@ -10,14 +10,14 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
   public:
     SpectrumDisplay(FFTProcessor<FFTSize> &spectralProcessor, const double sampleRateHz)
         : processor(spectralProcessor), sampleRate(sampleRateHz) {
-        magnitudes.resize(processor.getMagnitudes().size(), -100.0f);
+        magnitudes.resize(processor.getWetMagnitudes().size(), -100.0f);
         startTimerHz(60);
     }
 
     void paint(juce::Graphics &g) override {
-        g.fillAll(juce::Colours::black);
+        // g.fillAll(juce::Colours::black);
 
-        const auto &newMagnitudes = processor.getMagnitudes();
+        const auto &newMagnitudes = processor.getWetMagnitudes();
         if(newMagnitudes.empty())
             return;
 
@@ -89,21 +89,9 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
 
     void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; }
 
-  private:
+  protected:
     void timerCallback() override { repaint(); }
 
-    // float DBWarp(float magnitudeDB) const {
-    //     // Normalize to 0-1 range
-    //     float norm = juce::jmap(magnitudeDB, minDB, maxDB, 0.0f, 1.0f);
-    //
-    //     // Apply sigmoid warping (focus on middle range around -25dB)
-    //     // Midpoint at 0.44 corresponds to approximately -25dB in the -60 to +20 range
-    //     float x = (norm - 0.44f) * 5.0f;
-    //     float sigmoid = 1.0f / (1.0f + std::exp(-x));
-    //
-    //     // Map back to dB range
-    //     return juce::jmap(sigmoid, 0.0f, 1.0f, minDB, maxDB);
-    // }
     void spectralSmoothing(std::vector<juce::Point<float>> &points) {
         if(points.size() < 3)
             return;

@@ -13,17 +13,13 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
   public:
     SpectralCompressor(GaussianResponseCurve &responseCurveReference)
         : FFTProcessor<FFT_SIZE, NUM_CHANNELS>(), responseCurve(responseCurveReference) {
-        // Initialize envelope followers to 0 dB (no gain reduction)
         envelopeFollowers.fill(0.0f);
     }
 
     void setClipperActive(bool active) { clipperActive = active; }
-
     bool isClipperActive() const { return clipperActive; }
 
-    std::array<float, (size_t)FFT_SIZE / 2 + 1> getGainReductionArray() const {
-        return gainReductionArray;
-    }
+    std::array<float, FFT_SIZE / 2 + 1> getGainReductionArray() const { return gainReductionArray; }
 
     void setAttackTime(float timeMs) {
         attackTimeMs = timeMs;
@@ -35,178 +31,178 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         updateCoefficients();
     }
 
-    void setRatio(float newRatio) { ratio = juce::jlimit(1.0f, 20.0f, newRatio); }
+    void setRatio(float newRatio) { ratio = newRatio; }
 
-    void setKnee(float kneeDB) { kneeWidthDB = juce::jlimit(0.0f, 12.0f, kneeDB); }
+    void setKnee(float kneeDB) { kneeWidthDB = kneeDB; }
 
     void prepareToPlay(double newSampleRate) override {
         FFTProcessor<FFT_SIZE, NUM_CHANNELS>::prepareToPlay(newSampleRate);
         this->nyquist = static_cast<float>(newSampleRate) * 0.5f;
-        this->windowComp = 0.49f;
-        this->scale = (2.0f / FFT_SIZE) * windowComp;
-        this->dcNyquistScale = (1.0f / FFT_SIZE) * windowComp;
-
+        this->windowCompensation = WINDOW_COMPENSATION_FACTOR;
+        this->scale = (2.0f / FFT_SIZE) * windowCompensation;
+        this->dcNyquistScale = (1.0f / FFT_SIZE) * windowCompensation;
         updateCoefficients();
         envelopeFollowers.fill(0.0f);
     }
 
   private:
+    static constexpr size_t NUM_BINS = FFT_SIZE / 2 + 1;
+    static constexpr size_t OVERLAP_FACTOR = 4;
+    static constexpr float WINDOW_COMPENSATION_FACTOR = 0.49f;
+    static constexpr float MIN_MAGNITUDE_THRESHOLD = 1e-10f;
+    static constexpr float MIN_MAGNITUDE_DB = -100.0f;
+    static constexpr float MAX_COEFF = 0.999f;
+
     void updateCoefficients() {
         if(this->sampleRate <= 0.0)
             return;
 
-        // Calculate time per FFT hop (overlap assumed to be 4x)
-        float hopSize = FFT_SIZE / 4.0f;
-        float timePerHop = hopSize / static_cast<float>(this->sampleRate);
+        const float hopSize = FFT_SIZE / static_cast<float>(OVERLAP_FACTOR);
+        const float timePerHop = hopSize / static_cast<float>(this->sampleRate);
 
-        // Convert attack/release times to coefficients
-        // Using exponential smoothing: coeff = exp(-1 / (time / hopTime))
         attackCoeff = std::exp(-timePerHop / (attackTimeMs * 0.001f));
         releaseCoeff = std::exp(-timePerHop / (releaseTimeMs * 0.001f));
 
-        // Clamp coefficients to valid range
-        attackCoeff = juce::jlimit(0.0f, 0.999f, attackCoeff);
-        releaseCoeff = juce::jlimit(0.0f, 0.999f, releaseCoeff);
+        attackCoeff = juce::jlimit(0.0f, MAX_COEFF, attackCoeff);
+        releaseCoeff = juce::jlimit(0.0f, MAX_COEFF, releaseCoeff);
     }
 
     void processFFTBins(std::array<float, FFT_SIZE * 2> &transformedBuffer) override {
-        auto gaussianPeaks = responseCurve.getGaussianPeaks();
+        const auto gaussianPeaks = responseCurve.getGaussianPeaks();
         if(gaussianPeaks.empty())
             return;
 
-        for(size_t bin = 0; bin <= FFT_SIZE / 2; ++bin) {
-            float frequency = bin / static_cast<float>(FFT_SIZE) * this->sampleRate;
-            float magnitude, phase;
-
-            // Extract magnitude and phase
-            if(bin == 0 || bin == FFT_SIZE / 2) {
-                magnitude = std::abs(transformedBuffer[bin]) * dcNyquistScale;
-                phase = (transformedBuffer[bin] >= 0.0f) ? 0.0f : juce::MathConstants<float>::pi;
-            } else {
-                float real = transformedBuffer[bin];
-                float imag = transformedBuffer[bin + FFT_SIZE];
-                magnitude = std::sqrt(real * real + imag * imag) * scale;
-                phase = std::atan2(imag, real);
-            }
-
-            // Convert to dB
-            float magnitudeDB = (magnitude > 1e-10f) ? 20.0f * std::log10(magnitude) : -100.0f;
-
-            // Get dynamic threshold from Gaussian curve
-            float thresholdDB = calculateGaussianSum(frequency, gaussianPeaks);
-
-            float gainReductionDB;
-
-            if(clipperActive) {
-                // Hard clipping behavior - instant hard limiting at threshold
-                if(magnitudeDB > thresholdDB) {
-                    gainReductionDB = magnitudeDB - thresholdDB;
-                } else {
-                    gainReductionDB = 0.0f;
-                }
-            } else {
-                // Normal compressor behavior with ratio and knee
-                gainReductionDB = calculateGainReduction(magnitudeDB, thresholdDB);
-            }
-
-            // Apply envelope follower for smoothing (only for compressor mode)
-            float smoothedGainReductionDB;
-            if(clipperActive) {
-                // No smoothing for clipper - instant response
-                smoothedGainReductionDB = gainReductionDB;
-            } else {
-                smoothedGainReductionDB = applyEnvelopeFollower(bin, gainReductionDB);
-            }
-
-            // Store for visualization
-            gainReductionArray[bin] = smoothedGainReductionDB;
-
-            // Apply gain reduction
-            float gainLinear = std::pow(10.0f, -smoothedGainReductionDB / 20.0f);
-            magnitude *= gainLinear;
-
-            // Reconstruct complex values
-            if(bin == 0 || bin == FFT_SIZE / 2) {
-                magnitude /= dcNyquistScale;
-                transformedBuffer[bin] = magnitude * std::cos(phase);
-            } else {
-                magnitude /= scale;
-                transformedBuffer[bin] = magnitude * std::cos(phase);
-                transformedBuffer[bin + FFT_SIZE] = magnitude * std::sin(phase);
-            }
+        for(size_t bin = 0; bin < NUM_BINS; ++bin) {
+            processSingleBin(transformedBuffer, bin, gaussianPeaks);
         }
     }
 
-    float calculateGainReduction(float inputDB, float thresholdDB) {
-        float overThresholdDB = inputDB - thresholdDB;
+    void processSingleBin(std::array<float, FFT_SIZE * 2> &buffer, size_t bin,
+                          const std::vector<GaussianPeak> &gaussianPeaks) {
+        const float frequency = binToFrequency(bin);
+        float magnitude, phase;
+        extractMagnitudeAndPhase(buffer, bin, magnitude, phase);
+        const float magnitudeDB = magnitudeToDecibels(magnitude);
+        const float thresholdDB = calculateGaussianSum(frequency, gaussianPeaks);
+        const float gainReductionDB = calculateCompression(magnitudeDB, thresholdDB, bin);
+        gainReductionArray[bin] = gainReductionDB;
+        const float gainLinear = decibelsToLinear(-gainReductionDB);
+        magnitude *= gainLinear;
+        reconstructComplexValue(buffer, bin, magnitude, phase);
+    }
 
-        if(overThresholdDB <= -kneeWidthDB / 2.0f) {
-            // Below knee - no compression
-            return 0.0f;
-        } else if(overThresholdDB >= kneeWidthDB / 2.0f) {
-            // Above knee - full compression
-            return overThresholdDB * (1.0f - 1.0f / ratio);
+    float binToFrequency(size_t bin) const {
+        return bin / static_cast<float>(FFT_SIZE) * this->sampleRate;
+    }
+
+    bool isDCOrNyquistBin(size_t bin) const { return bin == 0 || bin == FFT_SIZE / 2; }
+
+    void extractMagnitudeAndPhase(const std::array<float, FFT_SIZE * 2> &buffer, size_t bin,
+                                  float &magnitude, float &phase) const {
+        if(isDCOrNyquistBin(bin)) {
+            magnitude = std::abs(buffer[bin]) * dcNyquistScale;
+            phase = (buffer[bin] >= 0.0f) ? 0.0f : juce::MathConstants<float>::pi;
         } else {
-            // In knee region - soft knee
-            float x = overThresholdDB + kneeWidthDB / 2.0f;
-            float kneeGain = (x * x) / (2.0f * kneeWidthDB);
-            return kneeGain * (1.0f - 1.0f / ratio);
+            const float real = buffer[bin];
+            const float imag = buffer[bin + FFT_SIZE];
+            magnitude = std::sqrt(real * real + imag * imag) * scale;
+            phase = std::atan2(imag, real);
         }
+    }
+
+    void reconstructComplexValue(std::array<float, FFT_SIZE * 2> &buffer, size_t bin,
+                                 float magnitude, float phase) const {
+        if(isDCOrNyquistBin(bin)) {
+            magnitude /= dcNyquistScale;
+            buffer[bin] = magnitude * std::cos(phase);
+        } else {
+            magnitude /= scale;
+            buffer[bin] = magnitude * std::cos(phase);
+            buffer[bin + FFT_SIZE] = magnitude * std::sin(phase);
+        }
+    }
+
+    // Convert linear magnitude to decibels
+    float magnitudeToDecibels(float magnitude) const {
+        return (magnitude > MIN_MAGNITUDE_THRESHOLD) ? 20.0f * std::log10(magnitude)
+                                                     : MIN_MAGNITUDE_DB;
+    }
+
+    float decibelsToLinear(float dB) const { return std::pow(10.0f, dB / 20.0f); }
+
+    float calculateCompression(float magnitudeDB, float thresholdDB, size_t bin) {
+        float gainReductionDB;
+        if(clipperActive) {
+            gainReductionDB = std::max(0.0f, magnitudeDB - thresholdDB);
+        } else {
+            gainReductionDB = calculateGainReduction(magnitudeDB, thresholdDB);
+            gainReductionDB = applyEnvelopeFollower(bin, gainReductionDB);
+        }
+        return gainReductionDB;
+    }
+
+    float calculateGainReduction(float inputDB, float thresholdDB) const {
+        const float overThresholdDB = inputDB - thresholdDB;
+        const float halfKnee = kneeWidthDB / 2.0f;
+
+        if(overThresholdDB <= -halfKnee) {
+            return 0.0f;
+        }
+
+        if(overThresholdDB >= halfKnee) {
+            return overThresholdDB * (1.0f - 1.0f / ratio);
+        }
+
+        const float kneePosition = overThresholdDB + halfKnee;
+        const float kneeCurve = (kneePosition * kneePosition) / (2.0f * kneeWidthDB);
+        return kneeCurve * (1.0f - 1.0f / ratio);
     }
 
     float applyEnvelopeFollower(size_t bin, float targetGainReductionDB) {
-        float currentEnvelope = envelopeFollowers[bin];
-
-        // Choose coefficient based on whether we're attacking or releasing
-        float coeff = (targetGainReductionDB > currentEnvelope) ? attackCoeff : releaseCoeff;
-
-        // Exponential smoothing
-        float newEnvelope = coeff * currentEnvelope + (1.0f - coeff) * targetGainReductionDB;
-
+        const float currentEnvelope = envelopeFollowers[bin];
+        const float smoothingCoeff
+         = (targetGainReductionDB > currentEnvelope) ? attackCoeff : releaseCoeff;
+        const float newEnvelope
+         = smoothingCoeff * currentEnvelope + (1.0f - smoothingCoeff) * targetGainReductionDB;
         envelopeFollowers[bin] = newEnvelope;
         return newEnvelope;
     }
 
-    float calculateGaussianSum(float frequency, const std::vector<GaussianPeak> &peaks) {
-        responseCurveShiftDB = responseCurve.getResponseCurveShiftDB();
-        float logFreq = std::log10(frequency);
-        float sumDB = 0.0f;
-
+    float calculateGaussianSum(float frequency, const std::vector<GaussianPeak> &peaks) const {
+        const float responseCurveShiftDB = responseCurve.getResponseCurveShiftDB();
+        const float logFreq = std::log10(frequency);
+        float thresholdDB = 0.0f;
         for(const auto &peak : peaks) {
-            float peakLogFreq = std::log10(peak.frequency);
-            float dx = logFreq - peakLogFreq;
-            float exponent = -0.5f * (dx * dx) / (peak.sigmaNorm * peak.sigmaNorm);
-            float gaussianValue = std::exp(exponent);
-            sumDB += peak.gainDB * gaussianValue;
+            const float peakLogFreq = std::log10(peak.frequency);
+            const float logFrequencyDelta = logFreq - peakLogFreq;
+            const float exponent
+             = -0.5f * (logFrequencyDelta * logFrequencyDelta) / (peak.sigmaNorm * peak.sigmaNorm);
+            const float gaussianValue = std::exp(exponent);
+            thresholdDB += peak.gainDB * gaussianValue;
         }
 
-        return sumDB + responseCurveShiftDB;
+        return thresholdDB + responseCurveShiftDB;
     }
 
-    // State variables
-    std::array<float, (size_t)FFT_SIZE / 2 + 1> gainReductionArray{};
-    std::array<float, (size_t)FFT_SIZE / 2 + 1> envelopeFollowers{};
+    std::array<float, NUM_BINS> gainReductionArray{};
+    std::array<float, NUM_BINS> envelopeFollowers{};
 
-    // Compression parameters
     bool clipperActive = false;
     float ratio = 4.0f;
     float kneeWidthDB = 3.0f;
+
     float attackTimeMs = 10.0f;
     float releaseTimeMs = 100.0f;
 
-    // Smoothing coefficients
     float attackCoeff = 0.0f;
     float releaseCoeff = 0.0f;
 
-    // FFT scaling
-    float nyquist;
-    float windowComp;
-    float scale;
-    float dcNyquistScale;
+    float nyquist = 0.0f;
+    float windowCompensation = 0.0f;
+    float scale = 0.0f;
+    float dcNyquistScale = 0.0f;
 
-    // Reference to response curve
     GaussianResponseCurve &responseCurve;
-    float responseCurveShiftDB = Parameters::responseCurveShiftDB;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralCompressor)
 };

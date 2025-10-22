@@ -37,7 +37,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
         for(auto &fifo : outputFifos)
             fifo.clear();
 
-        magnitudes.fill(0.0f);
+        processedMagnitudes.fill(0.0f);
         this->sampleRate = sampleRate;
     }
 
@@ -60,7 +60,9 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
 
     double getSampleRate() const { return sampleRate; }
 
-    const std::array<float, FFT_SIZE / 2 + 1> &getMagnitudes() const { return magnitudes; }
+    const std::array<float, FFT_SIZE / 2 + 1> &getWetMagnitudes() const {
+        return processedMagnitudes;
+    }
 
     size_t getFFTSize() const { return FFT_SIZE; }
 
@@ -85,7 +87,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
         window.multiplyWithWindowingTable(fftBuffer.data(), FFT_SIZE);
         fft.performRealOnlyForwardTransform(fftBuffer.data());
         processFFTBins(fftBuffer);
-        storeMagnitudes(fftBuffer, channel);
+        storeProcessedMagnitudes(fftBuffer, channel);
         fft.performRealOnlyInverseTransform(fftBuffer.data());
         window.multiplyWithWindowingTable(fftBuffer.data(), FFT_SIZE);
 
@@ -105,7 +107,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
             inFifo.pop();
     }
 
-    void storeMagnitudes(const std::array<float, FFT_SIZE * 2> &fftBuffer, int channel) {
+    void storeProcessedMagnitudes(const std::array<float, FFT_SIZE * 2> &fftBuffer, int channel) {
         juce::SpinLock::ScopedLockType lock(mutex);
 
         constexpr float windowComp = 0.49f; // Hann window compensation
@@ -123,7 +125,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
             }
         };
 
-        auto &target = (channel == 0 ? tempMagnitudes : magnitudes);
+        auto &target = (channel == 0 ? tempMagnitudes : processedMagnitudes);
 
         for(size_t i = 0; i <= FFT_SIZE / 2; ++i) {
             float mag = computeMag(i);
@@ -135,7 +137,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
         }
 
         if(channel == 0 && NUM_CHANNELS == 1) {
-            magnitudes = tempMagnitudes;
+            processedMagnitudes = tempMagnitudes;
         }
     }
 
@@ -185,7 +187,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
     std::array<std::array<float, FFT_SIZE * 2>, NUM_CHANNELS> fftBuffers;
 
     mutable juce::SpinLock mutex;
-    std::array<float, FFT_SIZE / 2 + 1> magnitudes;
+    std::array<float, FFT_SIZE / 2 + 1> processedMagnitudes;
     std::array<float, FFT_SIZE / 2 + 1> tempMagnitudes;
 
   protected:
