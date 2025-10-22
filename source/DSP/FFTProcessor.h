@@ -24,7 +24,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
 
     ~FFTProcessor() = default;
 
-    void prepareToPlay(double sampleRate) {
+    void virtual prepareToPlay(double sampleRate) {
         for(auto &buf : OLABuffers)
             buf.fill(0.0f);
 

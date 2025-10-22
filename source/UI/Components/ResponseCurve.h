@@ -33,7 +33,6 @@ class ResponseCurve : public juce::Component {
         auto bounds = getLocalBounds().toFloat();
         auto pos = event.position;
         bool clickedOnPeak = false;
-
         for(size_t i = 0; i < gaussians.size(); ++i) {
             auto &peak = gaussians[i];
             float peakX = logFrequencyToX(peak.frequency);
@@ -47,7 +46,6 @@ class ResponseCurve : public juce::Component {
                 break;
             }
         }
-
         auto now = juce::Time::getCurrentTime();
         if((now.toMilliseconds() - lastClickTime.toMilliseconds() < 400)
            && lastClickPos.getDistanceFrom(event.position) < 5.0f) {
@@ -64,7 +62,6 @@ class ResponseCurve : public juce::Component {
                 responseCurve.addPeak({frequency, gainDB, 0.15f});
             }
         }
-
         lastClickTime = now;
         lastClickPos = event.position;
         repaint();
@@ -74,17 +71,13 @@ class ResponseCurve : public juce::Component {
         if(draggedPeakIndex >= 0 && draggedPeakIndex < (int)gaussians.size()) {
             auto bounds = getLocalBounds().toFloat();
             auto &peak = gaussians[draggedPeakIndex];
-
             if(!event.mods.isShiftDown()) {
                 float newX = event.position.x - dragOffset.x;
                 newX = juce::jlimit(bounds.getX(), bounds.getRight(), newX);
-
                 float logFreq = xToLogFrequency(newX);
                 float newFrequency = std::pow(10.0f, logFreq);
-
                 float newY = event.position.y - dragOffset.y;
                 newY = juce::jlimit(bounds.getY(), bounds.getBottom(), newY);
-
                 float gainDB = inverseDBWarp(newY, bounds) - responseCurveShiftDB;
                 gaussians[draggedPeakIndex].frequency = newFrequency;
                 gaussians[draggedPeakIndex].gainDB = gainDB;
@@ -102,6 +95,61 @@ class ResponseCurve : public juce::Component {
     void mouseUp(const juce::MouseEvent &) override { draggedPeakIndex = -1; }
 
   private:
+    // ##################
+    // #                #
+    // #  DRAW METHODS  #
+    // #                #
+    // ##################
+
+    void drawGaussianCurves(juce::Graphics &g) {
+        auto bounds = getLocalBounds().toFloat();
+        for(auto &gaussian : gaussians) {
+            juce::Path path;
+            for(int x = 0; x <= (int)bounds.getWidth(); ++x) {
+                float logFrequency = xToLogFrequency(bounds.getX() + x);
+                float gaussianValue = gaussianAtLogFrequency(logFrequency, gaussian);
+                float y = DBtoY(gaussianValue
+                                + responseCurveShiftDB); // Add shift to value before converting
+                x == 0 ? path.startNewSubPath(bounds.getX(), y) : path.lineTo(bounds.getX() + x, y);
+            }
+            g.setColour(juce::Colours::aliceblue.withAlpha(0.2f));
+            g.strokePath(path, juce::PathStrokeType(2.0f));
+        }
+    }
+
+    void drawSumOfGaussians(juce::Graphics &g) {
+        auto bounds = getLocalBounds().toFloat();
+        juce::Path path;
+        for(int x = 0; x <= bounds.getWidth(); ++x) {
+            float sumDB = 0.0f;
+            float logFreq = xToLogFrequency(bounds.getX() + x);
+            for(const auto &gauss : gaussians) {
+                float gaussianValue = gaussianAtLogFrequency(logFreq, gauss);
+                sumDB += gaussianValue;
+            }
+            float y = DBtoY(sumDB + responseCurveShiftDB); // Add shift to value before converting
+            x == 0 ? path.startNewSubPath(bounds.getX(), y) : path.lineTo(bounds.getX() + x, y);
+        }
+        g.setColour(juce::Colours::orange.withAlpha(0.8f));
+        g.strokePath(path, juce::PathStrokeType(2.0f));
+    }
+
+    void drawGaussianPeaks(juce::Graphics &g) {
+        for(auto &gaussian : gaussians) {
+            float peakX = logFrequencyToX(gaussian.frequency);
+            float peakY
+             = DBtoY(gaussian.gainDB + responseCurveShiftDB); // Add shift before converting
+            g.setColour(juce::Colours::yellow);
+            g.fillEllipse(peakX - 4.0f, peakY - 4.0f, 8.0f, 8.0f);
+        }
+    }
+
+    // #############
+    // #           #
+    // #  HELPERS  #
+    // #           #
+    // #############
+
     float DBtoY(float magnitudeDB) const {
         juce::Rectangle<float> bounds = getLocalBounds().toFloat();
         float warpedDB = DBWarp(magnitudeDB);
@@ -134,63 +182,6 @@ class ResponseCurve : public juce::Component {
         return gaussian.gainDB * gaussianLinear;
     }
 
-    // ###################
-    // #                 #
-    // #  PAINT METHODS  #
-    // #                 #
-    // ###################
-
-    void drawGaussianCurves(juce::Graphics &g) {
-        auto bounds = getLocalBounds().toFloat();
-        for(auto &gaussian : gaussians) {
-            juce::Path path;
-            for(int x = 0; x <= (int)bounds.getWidth(); ++x) {
-                float logFrequency = xToLogFrequency(bounds.getX() + x);
-                float gaussianValue = gaussianAtLogFrequency(logFrequency, gaussian);
-                float y = DBtoY(gaussianValue
-                                + responseCurveShiftDB); // Add shift to value before converting
-
-                if(x == 0)
-                    path.startNewSubPath(bounds.getX(), y);
-                else
-                    path.lineTo(bounds.getX() + x, y);
-            }
-            g.setColour(juce::Colours::aliceblue.withAlpha(0.2f));
-            g.strokePath(path, juce::PathStrokeType(2.0f));
-        }
-    }
-
-    void drawSumOfGaussians(juce::Graphics &g) {
-        auto bounds = getLocalBounds().toFloat();
-        juce::Path path;
-        for(int x = 0; x <= bounds.getWidth(); ++x) {
-            float sumDB = 0.0f;
-            float logFreq = xToLogFrequency(bounds.getX() + x);
-            for(const auto &gauss : gaussians) {
-                float gaussianValue = gaussianAtLogFrequency(logFreq, gauss);
-                sumDB += gaussianValue;
-            }
-            float y = DBtoY(sumDB + responseCurveShiftDB); // Add shift to value before converting
-
-            if(x == 0)
-                path.startNewSubPath(bounds.getX(), y);
-            else
-                path.lineTo(bounds.getX() + x, y);
-        }
-        g.setColour(juce::Colours::orange.withAlpha(0.8f));
-        g.strokePath(path, juce::PathStrokeType(2.0f));
-    }
-
-    void drawGaussianPeaks(juce::Graphics &g) {
-        for(auto &gaussian : gaussians) {
-            float peakX = logFrequencyToX(gaussian.frequency);
-            float peakY
-             = DBtoY(gaussian.gainDB + responseCurveShiftDB); // Add shift before converting
-            g.setColour(juce::Colours::yellow);
-            g.fillEllipse(peakX - 4.0f, peakY - 4.0f, 8.0f, 8.0f);
-        }
-    }
-
     void updateLogFreqBounds() {
         minFreq = 20.0;
         maxFreq = sampleRate * 0.5;
@@ -205,8 +196,6 @@ class ResponseCurve : public juce::Component {
     juce::Point<float> dragOffset;
 
     double sampleRate = 44100.0;
-    const float minDB = Parameters::minDBVisualizer;
-    const float maxDB = Parameters::maxDBVisualizer;
     double minFreq = 20.0;
     double maxFreq = 22050.0;
     double logMin = std::log10(20.0);
@@ -218,6 +207,8 @@ class ResponseCurve : public juce::Component {
     float initialMouseX = 0.0f;
     float initialSigma = 0.05f;
 
+    const float minDB = Parameters::minDBVisualizer;
+    const float maxDB = Parameters::maxDBVisualizer;
     float warpMidpoint = Parameters::warpMidPoint;
     float warpSteepness = Parameters::warpSteepness;
     float responseCurveShiftDB = Parameters::responseCurveShiftDB;

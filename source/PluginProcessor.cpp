@@ -26,7 +26,10 @@ void SpectrixAudioProcessor::releaseResources() {}
 void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                           juce::MidiBuffer &midiMessages) {
     juce::ScopedNoDenormals noDenormals;
+
+    buffer.applyGain(inputGain);
     spectralCompressor.processBlock(buffer);
+    buffer.applyGain(outputGain);
 }
 
 bool SpectrixAudioProcessor::hasEditor() const {
@@ -66,10 +69,45 @@ bool SpectrixAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 }
 
 void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newValue) {
-    if(paramID == Parameters::magThreshold) {}
-    if(paramID == Parameters::spectrumAttack) {}
+    if(paramID == Parameters::magThreshold) {
+        // Handle magnitude threshold change
+    }
+
+    if(paramID == Parameters::spectrumAttack) {
+        // Handle spectrum detail change
+    }
+
     if(paramID == Parameters::responseCurveShiftDBID) {
         responseCurve.setResponseCurveShiftDB(newValue);
+    }
+
+    if(paramID == Parameters::attackTimeID) {
+        spectralCompressor.setAttackTime(newValue);
+    }
+
+    if(paramID == Parameters::releaseTimeID) {
+        spectralCompressor.setReleaseTime(newValue);
+    }
+
+    if(paramID == Parameters::ratioID) {
+        spectralCompressor.setRatio(newValue);
+    }
+
+    if(paramID == Parameters::kneeWidthID) {
+        spectralCompressor.setKnee(newValue);
+    }
+
+    if(paramID == Parameters::isClipperID) {
+        // newValue will be 0.0f or 1.0f for bool parameters
+        spectralCompressor.setClipperActive(newValue >= 0.5f);
+    }
+
+    if(paramID == Parameters::inputGainID) {
+        inputGain = juce::Decibels::decibelsToGain(newValue);
+    }
+
+    if(paramID == Parameters::outputGainID) {
+        outputGain = juce::Decibels::decibelsToGain(newValue);
     }
 }
 

@@ -51,6 +51,9 @@ class SpectrixAudioProcessor : public juce::AudioProcessor,
     GaussianResponseCurve responseCurve;
     SpectralCompressor<Parameters::FFT_SIZE> spectralCompressor;
 
+    float inputGain = 1.0f;
+    float outputGain = 1.0f;
+
   private:
     void parameterChanged(const String &paramID, float newValue) override;
 
