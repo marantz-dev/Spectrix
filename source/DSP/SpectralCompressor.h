@@ -51,7 +51,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     static constexpr float WINDOW_COMPENSATION_FACTOR = 0.49f;
     static constexpr float MIN_MAGNITUDE_THRESHOLD = 1e-10f;
     static constexpr float MIN_MAGNITUDE_DB = -100.0f;
-    static constexpr float MAX_COEFF = 0.999f;
+    static constexpr float MAX_COEFF = 0.99999f;
 
     void updateCoefficients() {
         if(this->sampleRate <= 0.0)

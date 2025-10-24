@@ -25,8 +25,8 @@ namespace Parameters {
     static const float defaultRatio = 4.0f;
 
     // Visualizer constants
-    static const float minDBVisualizer = -80.0f;
-    static const float maxDBVisualizer = 6.0f;
+    static const float minDBVisualizer = -96.0f;
+    static const float maxDBVisualizer = 12.0f;
     static const float warpMidPoint = 0.4f;
     static const float warpSteepness = 0.0f;
 
@@ -41,7 +41,7 @@ namespace Parameters {
 
         // Attack Time
         params.push_back(std::make_unique<AudioParameterFloat>(
-         ParameterID("AT", id++), "Attack", NormalisableRange<float>(0.1f, 100.0f, 0.1f, 0.3f),
+         ParameterID("AT", id++), "Attack", NormalisableRange<float>(1.0f, 1000.0f, 1.0f, 0.5f),
          defaultAttackTime, String(), AudioProcessorParameter::genericParameter,
          [](float value, int) { return String(value, 1) + " ms"; },
          [](const String &text) { return text.dropLastCharacters(3).getFloatValue(); }));

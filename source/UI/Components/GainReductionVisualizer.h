@@ -98,8 +98,8 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
 
     // simple attack/release smoothing of incoming dB values
     void updateGainReduction(const std::array<float, (size_t)FFTSize / 2 + 1> &newData) {
-        const float attackCoeff = 0.2f;
-        const float releaseCoeff = 0.05f;
+        const float attackCoeff = 0.9f;
+        const float releaseCoeff = 0.9f;
 
         for(size_t i = 0; i < newData.size() && i < gainReductions.size(); ++i) {
             float incoming = newData[i];
