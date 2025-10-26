@@ -2,11 +2,14 @@
 #include "FFTProcessor.h"
 #include "GaussianResponseCurve.h"
 #include "PluginParameters.h"
+#include "juce_audio_basics/juce_audio_basics.h"
 #include <JuceHeader.h>
 #include <array>
 #include <cstddef>
 #include <vector>
 #include <cmath>
+
+enum CompressorMode { COMPRESSOR, CLIPPER, GATE };
 
 template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2>
 class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
@@ -16,8 +19,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         envelopeFollowers.fill(0.0f);
     }
 
-    void setClipperActive(bool active) { clipperActive = active; }
-    bool isClipperActive() const { return clipperActive; }
+    void setCompressorMode(int newMode) { mode = CompressorMode(newMode); }
 
     std::array<float, FFT_SIZE / 2 + 1> getGainReductionArray() const { return gainReductionArray; }
 
@@ -86,7 +88,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         const float thresholdDB = calculateGaussianSum(frequency, gaussianPeaks);
         const float gainReductionDB = calculateCompression(magnitudeDB, thresholdDB, bin);
         gainReductionArray[bin] = gainReductionDB;
-        const float gainLinear = decibelsToLinear(-gainReductionDB);
+        const float gainLinear = Decibels::decibelsToGain(-gainReductionDB);
         magnitude *= gainLinear;
         reconstructComplexValue(buffer, bin, magnitude, phase);
     }
@@ -122,7 +124,6 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         }
     }
 
-    // Convert linear magnitude to decibels
     float magnitudeToDecibels(float magnitude) const {
         return (magnitude > MIN_MAGNITUDE_THRESHOLD) ? 20.0f * std::log10(magnitude)
                                                      : MIN_MAGNITUDE_DB;
@@ -131,14 +132,24 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     float decibelsToLinear(float dB) const { return std::pow(10.0f, dB / 20.0f); }
 
     float calculateCompression(float magnitudeDB, float thresholdDB, size_t bin) {
-        float gainReductionDB;
-        if(clipperActive) {
-            gainReductionDB = std::max(0.0f, magnitudeDB - thresholdDB);
-        } else {
-            gainReductionDB = calculateGainReduction(magnitudeDB, thresholdDB);
-            gainReductionDB = applyEnvelopeFollower(bin, gainReductionDB);
+        switch(mode) {
+        case COMPRESSOR: {
+            float gainReductionDB = calculateGainReduction(magnitudeDB, thresholdDB);
+            return applyEnvelopeFollower(bin, gainReductionDB);
         }
-        return gainReductionDB;
+        case CLIPPER: {
+            float over = magnitudeDB - thresholdDB;
+            float gainReductionDB = (over > 0.0f) ? over : 0.0f;
+            return gainReductionDB;
+        }
+        case GATE: {
+            if(magnitudeDB < thresholdDB)
+                return applyEnvelopeFollower(bin, 100.0f); // 100 dB = praticamente muto
+            else
+                return applyEnvelopeFollower(bin, 0.0f); // nessuna riduzione
+        }
+        default: return 0.0f;
+        }
     }
 
     float calculateGainReduction(float inputDB, float thresholdDB) const {
@@ -187,7 +198,8 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     std::array<float, NUM_BINS> gainReductionArray{};
     std::array<float, NUM_BINS> envelopeFollowers{};
 
-    bool clipperActive = false;
+    CompressorMode mode = COMPRESSOR;
+
     float ratio = 4.0f;
     float kneeWidthDB = 3.0f;
 

@@ -4,7 +4,7 @@
 #include "FFTProcessor.h"
 #include "juce_graphics/juce_graphics.h"
 #include "PluginParameters.h"
-#include "UIUtilities.h"
+#include "UIutils.h"
 
 template <int FFTSize> class SpectrumDisplay : public juce::Component, private juce::Timer {
   public:

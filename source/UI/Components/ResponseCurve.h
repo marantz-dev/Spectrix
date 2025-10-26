@@ -2,7 +2,7 @@
 
 #include "GaussianResponseCurve.h"
 #include "PluginParameters.h"
-#include "UIUtilities.h"
+#include "UIutils.h"
 #include "juce_graphics/juce_graphics.h"
 #include <JuceHeader.h>
 #include <vector>
@@ -211,5 +211,5 @@ class ResponseCurve : public juce::Component {
     const float maxDB = Parameters::maxDBVisualizer;
     float warpMidpoint = Parameters::warpMidPoint;
     float warpSteepness = Parameters::warpSteepness;
-    float responseCurveShiftDB = Parameters::responseCurveShiftDB;
+    float responseCurveShiftDB = Parameters::defaultCurveShiftDB;
 };

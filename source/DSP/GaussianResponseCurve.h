@@ -37,7 +37,7 @@ class GaussianResponseCurve {
     float getResponseCurveShiftDB() const { return responseCurveShiftDB; }
 
   private:
-    float responseCurveShiftDB = Parameters::responseCurveShiftDB;
+    float responseCurveShiftDB = Parameters::defaultCurveShiftDB;
     mutable std::mutex mutex;
     std::vector<GaussianPeak> gaussians;
 };
