@@ -3,6 +3,7 @@
 #include "CompressorControls.h"
 #include "CompressorModeSection.h"
 #include "GainControls.h"
+#include "Metering.h"
 #include "PluginProcessor.h"
 #include <JuceHeader.h>
 #include "ResponseCurve.h"
@@ -16,10 +17,9 @@ class SpectrixAudioProcessorEditor : public juce::AudioProcessorEditor {
     ~SpectrixAudioProcessorEditor() override;
 
     //==============================================================================
+    void prepareToPlay(double sampleRate, int samplesPerBlock);
     void paint(juce::Graphics &) override;
     void resized() override;
-
-    void updateSpectrumDetail(float newAttack);
 
   private:
     SpectrumSection spectrumSection;
@@ -27,6 +27,7 @@ class SpectrixAudioProcessorEditor : public juce::AudioProcessorEditor {
     CompressorSection compressorControlsSection;
     GainControlSection gainControlSection;
     CompressionModeSection compressionModeSection;
+    MeteringSection meteringSecttion;
 
     SpectrixAudioProcessor &audioProcessor;
 

@@ -24,6 +24,8 @@ class ResponseCurve : public juce::Component {
         drawSumOfGaussians(g);
         drawGaussianPeaks(g);
     }
+
+    void setSampleRate(double newSampleRate) { this->sampleRate = newSampleRate; }
     // ##################
     // #                #
     // #  MOUSE EVENTS  #
@@ -36,7 +38,7 @@ class ResponseCurve : public juce::Component {
         bool clickedOnPeak = false;
         for(size_t i = 0; i < gaussians.size(); ++i) {
             auto &peak = gaussians[i];
-            float peakX = logFrequencyToX(peak.frequency);
+            float peakX = frequencyToX(peak.frequency);
             float peakY = DBtoY(peak.gainDB + responseCurveShiftDB); // Add shift BEFORE converting
             float dist = pos.getDistanceFrom(juce::Point<float>(peakX, peakY));
             if(dist <= 10.0f) {
@@ -98,7 +100,7 @@ class ResponseCurve : public juce::Component {
         hoveredPeakIndex = -1; // reset
         for(size_t i = 0; i < gaussians.size(); ++i) {
             auto &peak = gaussians[i];
-            float peakX = logFrequencyToX(peak.frequency);
+            float peakX = frequencyToX(peak.frequency);
             float peakY = DBtoY(peak.gainDB + responseCurveShiftDB);
             if(pos.getDistanceFrom({peakX, peakY}) <= 10.0f) { // hover radius
                 hoveredPeakIndex = (int)i;
@@ -157,16 +159,16 @@ class ResponseCurve : public juce::Component {
     void drawGaussianPeaks(juce::Graphics &g) {
         for(size_t i = 0; i < gaussians.size(); ++i) {
             auto &gaussian = gaussians[i];
-            float peakX = logFrequencyToX(gaussian.frequency);
+            float peakX = frequencyToX(gaussian.frequency);
             float peakY = DBtoY(gaussian.gainDB + responseCurveShiftDB);
 
             if((int)i == hoveredPeakIndex) {
                 g.setColour(juce::Colours::white); // hovered = white
                 g.fillEllipse(peakX - 10.0f, peakY - 10.0f, 20.0f, 20.0f);
-                g.setColour(juce::Colours::magenta); // normal = yellow
+                g.setColour(juce::Colours::blueviolet); // normal = yellow
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             } else {
-                g.setColour(juce::Colours::magenta); // normal = yellow
+                g.setColour(juce::Colours::blueviolet); // normal = yellow
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             }
         }
@@ -195,7 +197,7 @@ class ResponseCurve : public juce::Component {
         return juce::jmap<float>(x, bounds.getX(), bounds.getRight(), (float)logMin, (float)logMax);
     }
 
-    float logFrequencyToX(float frequency) const {
+    float frequencyToX(float frequency) const {
         juce::Rectangle<float> bounds = getLocalBounds().toFloat();
         float logFreq = std::log10(frequency);
         return juce::jmap<float>(logFreq, (float)logMin, (float)logMax, bounds.getX(),

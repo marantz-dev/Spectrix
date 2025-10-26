@@ -60,7 +60,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
 
     double getSampleRate() const { return sampleRate; }
 
-    const std::array<float, FFT_SIZE / 2 + 1> &getWetMagnitudes() const {
+    const std::array<float, FFT_SIZE / 2 + 1> &getProcessedMagnitudes() const {
         return processedMagnitudes;
     }
 

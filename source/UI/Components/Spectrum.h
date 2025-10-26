@@ -8,16 +8,17 @@
 
 template <int FFTSize> class SpectrumDisplay : public juce::Component, private juce::Timer {
   public:
-    SpectrumDisplay(FFTProcessor<FFTSize> &spectralProcessor, const double sampleRateHz)
-        : processor(spectralProcessor), sampleRate(sampleRateHz) {
-        magnitudes.resize(processor.getWetMagnitudes().size(), -100.0f);
+    SpectrumDisplay(FFTProcessor<FFTSize> &spectralProcessor, const double sampleRateHz,
+                    const juce::Colour spectrumColour)
+        : processor(spectralProcessor), sampleRate(sampleRateHz), spectrumColour(spectrumColour) {
+        magnitudes.resize(processor.getProcessedMagnitudes().size(), -100.0f);
         startTimerHz(60);
     }
 
     void paint(juce::Graphics &g) override {
         // g.fillAll(juce::Colours::black);
 
-        const auto &newMagnitudes = processor.getWetMagnitudes();
+        const auto &newMagnitudes = processor.getProcessedMagnitudes();
         if(newMagnitudes.empty())
             return;
 
@@ -37,9 +38,8 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         for(size_t i = 1; i < magnitudes.size(); ++i) {
             float frequency = (i * nyquistFreq) / (magnitudes.size() - 1);
             float logFreq = std::log10(frequency);
-            float x
-             = bounds.getX()
-               + juce::jmap(logFreq, logMin, logMax, 0.0f, static_cast<float>(bounds.getWidth()));
+            float x = juce::jmap<float>(logFreq, (float)logMin, (float)logMax, bounds.getX(),
+                                        bounds.getRight());
             float magnitudeDB = magnitudes[i]; // Already in dB from updateMagnitudes
             magnitudeDB
              = juce::jlimit(Parameters::minDBVisualizer, Parameters::maxDBVisualizer, magnitudeDB);
@@ -63,7 +63,7 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
             }
         }
 
-        g.setColour(juce::Colours::cyan.brighter());
+        g.setColour(spectrumColour.brighter());
 
         g.strokePath(spectrumPath, juce::PathStrokeType(2.0f));
 
@@ -71,9 +71,9 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         spectrumPath.lineTo(points[0].x, bounds.getBottom());
         spectrumPath.closeSubPath();
 
-        juce::ColourGradient gradient(juce::Colours::cyan.withAlpha(0.6f), bounds.getX(),
-                                      bounds.getY(), juce::Colours::cyan.withAlpha(0.05f),
-                                      bounds.getX(), bounds.getBottom(), false);
+        juce::ColourGradient gradient(spectrumColour.withAlpha(0.6f), bounds.getX(), bounds.getY(),
+                                      spectrumColour.withAlpha(0.0f), bounds.getX(),
+                                      bounds.getBottom(), false);
 
         g.setGradientFill(gradient);
         g.fillPath(spectrumPath);
@@ -84,7 +84,7 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
             strokePath.lineTo(points[i]);
         }
 
-        g.setColour(juce::Colours::cyan);
+        g.setColour(spectrumColour);
     }
 
     void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; }
@@ -139,4 +139,5 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     double sampleRate;
     float minDB = Parameters::minDBVisualizer;
     float maxDB = Parameters::maxDBVisualizer;
+    juce::Colour spectrumColour;
 };

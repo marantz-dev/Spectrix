@@ -1,8 +1,10 @@
 #pragma once
+#include "FFTProcessor.h"
 #include "SpectralCompressor.h"
 #include <JuceHeader.h>
 #include "PluginParameters.h"
 #include "GaussianResponseCurve.h"
+#include "SpectralVisualizer.h"
 
 class SpectrixAudioProcessor : public juce::AudioProcessor,
                                public AudioProcessorValueTreeState::Listener {
@@ -48,10 +50,18 @@ class SpectrixAudioProcessor : public juce::AudioProcessor,
     void getStateInformation(juce::MemoryBlock &destData) override;
     void setStateInformation(const void *data, int sizeInBytes) override;
 
+    void
+    updateProbe(juce::Atomic<float> &probe, const juce::AudioBuffer<float> &buf, int numSamples) {
+        probe.set(jmax(buf.getMagnitude(0, numSamples), probe.get()));
+    }
+
     GaussianResponseCurve responseCurve;
     SpectralCompressor<Parameters::FFT_SIZE> spectralCompressor;
+    SpectralVisualizer<Parameters::FFT_SIZE> spectralVisualizer;
 
     SmoothedValue<float, ValueSmoothingTypes::Linear> inputGain, outputGain;
+    Atomic<float> inputProbe;
+    Atomic<float> outputProbe;
 
   private:
     void parameterChanged(const String &paramID, float newValue) override;
