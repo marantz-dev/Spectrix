@@ -8,6 +8,7 @@
 #include "SpectrumSection.h"
 #include "juce_audio_processors/juce_audio_processors.h"
 #include "juce_graphics/juce_graphics.h"
+#include <iostream>
 
 SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcessor &p,
                                                            AudioProcessorValueTreeState &vts)
@@ -23,6 +24,9 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
     compressorControlsSection.setLookAndFeel(&theme);
     gainControlSection.setLookAndFeel(&theme);
     compressionModeSection.setLookAndFeel(&theme);
+
+    pluginTitleImage = juce::ImageFileFormat::loadFrom(
+     juce::File("/Users/riccardomarantonio/Desktop/SPECTRIX-26-10-2025.png"));
 
     setSize(1422, 800);
 }
@@ -41,14 +45,7 @@ void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
     auto bounds = getLocalBounds();
     auto height = bounds.getHeight();
 
-    // g.fillAll(juce::Colours::black.brighter(0.1f));
     g.fillAll(juce::Colours::black.brighter(0.1f));
-    g.setColour(juce::Colours::white);
-
-    auto headerBounds = bounds.removeFromTop(height * 0.06f);
-    headerBounds.removeFromLeft(40);
-    g.setFont(30.0f);
-    g.drawFittedText("Spectrix", headerBounds, juce::Justification::left, 1);
 
     auto topSectionBounds = getLocalBounds();
     topSectionBounds.removeFromBottom(topSectionBounds.getHeight() * 0.3 + 10);
@@ -56,12 +53,21 @@ void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
     g.setColour(juce::Colours::whitesmoke);
     juce::Line<float> line(topSectionBounds.getBottomLeft().toFloat(),
                            topSectionBounds.getBottomRight().toFloat());
-
     g.drawLine(line, 2.0f);
-    juce::ColourGradient gradient(Colours::blueviolet.darker(7), 0, 0, // Colour + start point
-                                  juce::Colours::black, 0, getHeight(), false);
+
+    juce::ColourGradient gradient(juce::Colours::blueviolet.darker(7), 0, 0, juce::Colours::black,
+                                  0, getHeight(), false);
     g.setGradientFill(gradient);
     g.fillRect(topSectionBounds);
+
+    if(pluginTitleImage.isValid()) {
+        g.drawImage(pluginTitleImage, 10, 10, 266, 55, 0, 0, pluginTitleImage.getWidth(),
+                    pluginTitleImage.getHeight());
+    } else {
+        g.setColour(juce::Colours::white);
+        g.setFont(30.0f);
+        g.drawText("Spectrix", 30, 30, 300, 50, juce::Justification::left);
+    }
 }
 
 void SpectrixAudioProcessorEditor::resized() {

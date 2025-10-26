@@ -31,6 +31,8 @@ class SpectrixAudioProcessorEditor : public juce::AudioProcessorEditor {
 
     SpectrixAudioProcessor &audioProcessor;
 
+    juce::Image pluginTitleImage;
+
     Theme theme;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrixAudioProcessorEditor)
