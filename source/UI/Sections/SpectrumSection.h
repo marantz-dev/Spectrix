@@ -19,7 +19,7 @@ class SpectrumSection : public juce::Component {
           responseCurve(audioProcessor.responseCurve, audioProcessor.getSampleRate()),
           grid(audioProcessor.getSampleRate()) {
         // Group box
-        addAndMakeVisible(grid);
+        // addAndMakeVisible(grid);
         addAndMakeVisible(spectrumDisplay);
         addAndMakeVisible(gainReductionVisualizer);
         addAndMakeVisible(responseCurve);

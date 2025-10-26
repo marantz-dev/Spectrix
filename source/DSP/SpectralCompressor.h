@@ -198,7 +198,7 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     std::array<float, NUM_BINS> gainReductionArray{};
     std::array<float, NUM_BINS> envelopeFollowers{};
 
-    CompressorMode mode = COMPRESSOR;
+    CompressorMode mode = CompressorMode(1);
 
     float ratio = 4.0f;
     float kneeWidthDB = 3.0f;

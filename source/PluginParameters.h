@@ -21,7 +21,7 @@ namespace Parameters {
     static const float defaultAttackTime = 10.0f;   // ms
     static const float defaultReleaseTime = 100.0f; // ms
     static const float defaultKneeWidth = 3.0f;     // dB
-    static const bool defaultCompressorMode = false;
+    static const bool defaultCompressorMode = 0;
     static const float defaultInputGain = 0.0f;  // dB
     static const float defaultOutputGain = 0.0f; // dB
     static const float defaultRatio = 4.0f;

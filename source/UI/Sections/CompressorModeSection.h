@@ -17,10 +17,10 @@ class CompressionModeSection : public juce::Component {
         compressorSectionBorder.setTextLabelPosition(juce::Justification::centred);
 
         UIutils::setupToggleButton(compressorButton, "Compressor");
-        compressorButton.setToggleState(true, juce::dontSendNotification);
         addAndMakeVisible(compressorButton);
 
         UIutils::setupToggleButton(clipperButton, "Clipper");
+        clipperButton.setToggleState(true, juce::dontSendNotification);
         addAndMakeVisible(clipperButton);
 
         UIutils::setupToggleButton(gateButton, "Gate");

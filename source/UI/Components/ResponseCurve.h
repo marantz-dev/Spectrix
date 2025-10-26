@@ -5,6 +5,7 @@
 #include "UIutils.h"
 #include "juce_graphics/juce_graphics.h"
 #include <JuceHeader.h>
+#include <array>
 #include <vector>
 #include <cmath>
 #include <numbers>
@@ -92,6 +93,25 @@ class ResponseCurve : public juce::Component {
         }
     }
 
+    void mouseMove(const juce::MouseEvent &event) override {
+        auto pos = event.position;
+        hoveredPeakIndex = -1; // reset
+        for(size_t i = 0; i < gaussians.size(); ++i) {
+            auto &peak = gaussians[i];
+            float peakX = logFrequencyToX(peak.frequency);
+            float peakY = DBtoY(peak.gainDB + responseCurveShiftDB);
+            if(pos.getDistanceFrom({peakX, peakY}) <= 10.0f) { // hover radius
+                hoveredPeakIndex = (int)i;
+                setMouseCursor(juce::MouseCursor::PointingHandCursor);
+                break;
+            } else {
+                setMouseCursor(juce::MouseCursor::NormalCursor);
+            }
+
+            repaint();
+        }
+    }
+
     void mouseUp(const juce::MouseEvent &) override { draggedPeakIndex = -1; }
 
   private:
@@ -130,17 +150,25 @@ class ResponseCurve : public juce::Component {
             float y = DBtoY(sumDB + responseCurveShiftDB); // Add shift to value before converting
             x == 0 ? path.startNewSubPath(bounds.getX(), y) : path.lineTo(bounds.getX() + x, y);
         }
-        g.setColour(juce::Colours::orange.withAlpha(0.8f));
+        g.setColour(juce::Colours::yellow.withAlpha(0.8f).brighter());
         g.strokePath(path, juce::PathStrokeType(2.0f));
     }
 
     void drawGaussianPeaks(juce::Graphics &g) {
-        for(auto &gaussian : gaussians) {
+        for(size_t i = 0; i < gaussians.size(); ++i) {
+            auto &gaussian = gaussians[i];
             float peakX = logFrequencyToX(gaussian.frequency);
-            float peakY
-             = DBtoY(gaussian.gainDB + responseCurveShiftDB); // Add shift before converting
-            g.setColour(juce::Colours::yellow);
-            g.fillEllipse(peakX - 4.0f, peakY - 4.0f, 8.0f, 8.0f);
+            float peakY = DBtoY(gaussian.gainDB + responseCurveShiftDB);
+
+            if((int)i == hoveredPeakIndex) {
+                g.setColour(juce::Colours::white); // hovered = white
+                g.fillEllipse(peakX - 10.0f, peakY - 10.0f, 20.0f, 20.0f);
+                g.setColour(juce::Colours::magenta); // normal = yellow
+                g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
+            } else {
+                g.setColour(juce::Colours::magenta); // normal = yellow
+                g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
+            }
         }
     }
 
@@ -193,6 +221,7 @@ class ResponseCurve : public juce::Component {
     std::vector<GaussianPeak> &gaussians;
 
     int draggedPeakIndex = -1;
+    int hoveredPeakIndex = -1; // -1 = no peak hovered
     juce::Point<float> dragOffset;
 
     double sampleRate = 44100.0;
