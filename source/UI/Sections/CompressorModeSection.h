@@ -25,7 +25,6 @@ class CompressionModeSection : public juce::Component {
         addAndMakeVisible(expanderButton);
 
         UIutils::setupToggleButton(clipperButton, "Clipper");
-        clipperButton.setToggleState(true, juce::dontSendNotification);
         addAndMakeVisible(clipperButton);
 
         UIutils::setupToggleButton(gateButton, "Gate");
@@ -61,6 +60,7 @@ class CompressionModeSection : public juce::Component {
             }
             updateButtons();
         };
+        updateButtons();
     }
     ~CompressionModeSection() override {}
     void resized() override {
