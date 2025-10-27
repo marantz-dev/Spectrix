@@ -29,6 +29,7 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
      = juce::ImageFileFormat::loadFrom(juce::File("/Users/riccardomarantonio/Desktop/LOGO.png"));
 
     setSize(1422, 800);
+    // setResizable(true, true);
 }
 
 void SpectrixAudioProcessorEditor::prepareToPlay(double sr, int sb) {
@@ -56,7 +57,7 @@ void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
     g.drawLine(line, 2.0f);
 
     juce::ColourGradient gradient(juce::Colours::blueviolet.darker(5), 0, 0,
-                                  juce::Colours::blueviolet.darker(15), 0, getHeight(), false);
+                                  juce::Colours::cyan.darker(5), 0, getHeight(), false);
     g.setGradientFill(gradient);
     g.fillRect(bounds);
 
@@ -72,8 +73,7 @@ void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
 
 void SpectrixAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
-    bounds.removeFromTop(bounds.getHeight() * 0.03f);
-    bounds.reduce(0, 20);
+    bounds.removeFromBottom(20);
 
     auto topSectionBounds = bounds;
     topSectionBounds.removeFromBottom(bounds.getHeight() * 0.3 + 10);
@@ -81,8 +81,8 @@ void SpectrixAudioProcessorEditor::resized() {
     bottomSectionBounds.removeFromTop(bounds.getHeight() * 0.7 + 10);
     bottomSectionBounds.reduce(20, 0);
 
-    spectrumSection.setBounds(topSectionBounds.withTrimmedRight(bounds.getWidth() * 0.05));
-    meteringSecttion.setBounds(topSectionBounds.withTrimmedLeft(bounds.getWidth() * 0.95));
+    spectrumSection.setBounds(topSectionBounds.withTrimmedRight(bounds.getWidth() * 0.025));
+    meteringSecttion.setBounds(topSectionBounds.withTrimmedLeft(bounds.getWidth() * 0.975));
 
     int trim = bottomSectionBounds.getWidth() * 0.2 + 40;
     compressorControlsSection.setBounds(

@@ -110,34 +110,35 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
     void storeProcessedMagnitudes(const std::array<float, FFT_SIZE * 2> &fftBuffer, int channel) {
         juce::SpinLock::ScopedLockType lock(mutex);
 
-        constexpr float windowComp = 0.49f; // Hann window compensation
-        const float scale = (2.0f / FFT_SIZE) * windowComp;
-        const float dcNyquistScale = (1.0f / FFT_SIZE) * windowComp;
-        const float channelWeight = (NUM_CHANNELS > 1) ? 0.5f : 1.0f;
+        constexpr float windowComp = 0.49f;                 // Hann/Blackman window compensation
+        const float scale = (2.0f / FFT_SIZE) * windowComp; // normal bins
+        const float dcNyquistScale = (1.0f / FFT_SIZE) * windowComp;  // DC & Nyquist
+        const float channelWeight = (NUM_CHANNELS > 1) ? 0.5f : 1.0f; // average stereo
 
         auto computeMag = [&](size_t bin) {
-            if(bin == 0 || bin == FFT_SIZE / 2) {
-                return std::abs(fftBuffer[bin]) * dcNyquistScale * channelWeight;
+            if(bin == 0) {
+                return std::abs(fftBuffer[0]) * dcNyquistScale * channelWeight;
+            } else if(bin == FFT_SIZE / 2) {
+                return std::abs(fftBuffer[1]) * dcNyquistScale * channelWeight;
             } else {
-                float real = fftBuffer[bin];
-                float imag = fftBuffer[bin + FFT_SIZE];
+                float real = fftBuffer[2 * bin];
+                float imag = fftBuffer[2 * bin + 1];
                 return std::sqrt(real * real + imag * imag) * scale * channelWeight;
             }
         };
 
-        auto &target = (channel == 0 ? tempMagnitudes : processedMagnitudes);
+        // For channel 0, store in tempMagnitudes
+        if(channel == 0) {
+            for(size_t i = 0; i <= FFT_SIZE / 2; ++i)
+                tempMagnitudes[i] = computeMag(i);
 
-        for(size_t i = 0; i <= FFT_SIZE / 2; ++i) {
-            float mag = computeMag(i);
-            if(channel == 0) {
-                tempMagnitudes[i] = mag;
-            } else if(NUM_CHANNELS > 1) {
-                target[i] = tempMagnitudes[i] + mag;
-            }
-        }
-
-        if(channel == 0 && NUM_CHANNELS == 1) {
-            processedMagnitudes = tempMagnitudes;
+            // If mono, copy immediately to processedMagnitudes
+            if(NUM_CHANNELS == 1)
+                processedMagnitudes = tempMagnitudes;
+        } else if(channel > 0 && NUM_CHANNELS > 1) {
+            // Add subsequent channels to processedMagnitudes
+            for(size_t i = 0; i <= FFT_SIZE / 2; ++i)
+                processedMagnitudes[i] = tempMagnitudes[i] + computeMag(i);
         }
     }
 

@@ -93,26 +93,21 @@ class Theme : public juce::LookAndFeel_V4 {
         auto isEnabled = button.isEnabled();
 
         // Synthwave color palette
-        auto backgroundColor = juce::Colour(0xff1a0a2e); // Deep purple background
-        auto onColor = juce::Colour(0xff0f6a7e);         // Hot pink/magenta
-        auto offColor = juce::Colour(0xff2d1b4e);        // Dark purple
-        auto hoverColor = juce::Colour(0xff3d2b5e);      // Lighter purple
-        auto textOffColor = juce::Colour(0xffb794f6);    // Light purple
-        auto textOnColor = juce::Colour(0xffffffff);     // White for contrast
-        auto glowColor = juce::Colour(0xffff006e);       // Neon pink glow
+        auto bgColor = juce::Colour(0xff1a0a2e);      // deep purple
+        auto onColor = juce::Colour(0xffff3d81);      // neon pink
+        auto offColor = juce::Colour(0xff2d1b4e);     // dark purple
+        auto hoverColor = juce::Colour(0xff3d2b5e);   // lighter purple
+        auto textOffColor = juce::Colour(0xffb794f6); // soft purple
+        auto textOnColor = juce::Colour(0xffffffff);  // white
+        auto glowColor = juce::Colour(0xffff0080);    // bright neon pink
 
+        // Determine button fill color
         juce::Colour buttonColor;
-        if(isToggleOn) {
+        if(isToggleOn)
             buttonColor = isButtonDown ? onColor.darker(0.2f) : onColor;
-        } else {
-            if(isButtonDown) {
-                buttonColor = offColor.darker(0.15f);
-            } else if(isHovered) {
-                buttonColor = hoverColor;
-            } else {
-                buttonColor = offColor;
-            }
-        }
+        else
+            buttonColor
+             = isButtonDown ? offColor.darker(0.15f) : (isHovered ? hoverColor : offColor);
 
         if(!isEnabled) {
             buttonColor = buttonColor.withAlpha(0.4f);
@@ -120,46 +115,36 @@ class Theme : public juce::LookAndFeel_V4 {
             textOnColor = textOnColor.withAlpha(0.4f);
         }
 
-        auto cornerRadius = 3.0f;
+        auto cornerRadius = 6.0f;
 
-        // Add outer glow effect when toggled on
+        // Neon glow layers
         if(isToggleOn && isEnabled) {
-            auto glowBounds = bounds.expanded(2.0f);
-            g.setColour(glowColor.withAlpha(0.3f));
-            g.fillRoundedRectangle(glowBounds, cornerRadius + 1.0f);
-
-            glowBounds = bounds.expanded(1.0f);
-            g.setColour(glowColor.withAlpha(0.5f));
-            g.fillRoundedRectangle(glowBounds, cornerRadius + 0.5f);
+            for(int i = 3; i > 0; --i) {
+                g.setColour(glowColor.withAlpha(0.1f * i));
+                g.fillRoundedRectangle(bounds.expanded(float(i) * 2.0f), cornerRadius + i);
+            }
         }
 
-        // Main button fill
-        g.setColour(buttonColor);
-        g.fillRoundedRectangle(bounds, cornerRadius);
-
-        // Neon-style border
-        if(isToggleOn) {
-            g.setColour(glowColor.brighter(0.3f));
-            g.drawRoundedRectangle(bounds, cornerRadius, 1.5f);
-        } else {
-            // Subtle cyan/blue border for off state (classic synthwave accent)
-            g.setColour(juce::Colour(0xff00d9ff).withAlpha(0.3f));
-            g.drawRoundedRectangle(bounds, cornerRadius, 1.0f);
-        }
-
-        // Optional: Add subtle gradient overlay for depth
+        // Main button fill with subtle gradient
         juce::ColourGradient gradient(buttonColor.brighter(0.1f), bounds.getX(), bounds.getY(),
-                                      buttonColor.darker(0.15f), bounds.getX(), bounds.getBottom(),
+                                      buttonColor.darker(0.2f), bounds.getX(), bounds.getBottom(),
                                       false);
         g.setGradientFill(gradient);
-        g.setOpacity(0.3f);
-        g.fillRoundedRectangle(bounds.reduced(0.5f), cornerRadius - 0.5f);
+        g.fillRoundedRectangle(bounds, cornerRadius);
+
+        // Neon border
+        if(isToggleOn) {
+            g.setColour(glowColor.brighter(0.2f));
+            g.drawRoundedRectangle(bounds, cornerRadius, 2.0f);
+        } else {
+            g.setColour(juce::Colour(0xff00d9ff).withAlpha(isHovered ? 0.6f : 0.3f));
+            g.drawRoundedRectangle(bounds, cornerRadius, 1.5f);
+        }
 
         // Button text
         if(button.getButtonText().isNotEmpty()) {
-            g.setOpacity(1.0f);
             g.setColour(isToggleOn ? textOnColor : textOffColor);
-            g.setFont(juce::FontOptions(bounds.getHeight() * 0.5f, juce::Font::bold));
+            g.setFont(juce::FontOptions(bounds.getHeight() * 0.35f, juce::Font::bold));
             g.drawFittedText(button.getButtonText(), bounds.toNearestInt(),
                              juce::Justification::centred, 1);
         }

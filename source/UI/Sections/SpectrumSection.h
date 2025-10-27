@@ -22,7 +22,7 @@ class SpectrumSection : public juce::Component {
           drySpectrum(audioProcessor.spectralVisualizer, audioProcessor.getSampleRate(),
                       juce::Colours::blueviolet.darker(3)) {
         // Group box
-        // addAndMakeVisible(grid);
+        addAndMakeVisible(grid);
         addAndMakeVisible(drySpectrum);
         addAndMakeVisible(spectrumDisplay);
         addAndMakeVisible(gainReductionVisualizer);
@@ -32,7 +32,7 @@ class SpectrumSection : public juce::Component {
     void resized() override {
         auto bounds = getLocalBounds();
 
-        // grid.setBounds(bounds);
+        grid.setBounds(bounds);
         drySpectrum.setBounds(bounds);
         spectrumDisplay.setBounds(bounds);
         responseCurve.setBounds(bounds);

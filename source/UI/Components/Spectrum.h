@@ -10,7 +10,7 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
   public:
     SpectrumDisplay(FFTProcessor<FFTSize> &spectralProcessor, const double sampleRateHz,
                     const juce::Colour spectrumColour)
-        : processor(spectralProcessor), sampleRate(sampleRateHz), spectrumColour(spectrumColour) {
+        : processor(spectralProcessor), spectrumColour(spectrumColour), sampleRate(sampleRateHz) {
         magnitudes.resize(processor.getProcessedMagnitudes().size(), -100.0f);
         startTimerHz(60);
     }

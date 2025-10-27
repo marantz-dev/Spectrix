@@ -105,8 +105,8 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
             magnitude = std::abs(buffer[bin]) * dcNyquistScale;
             phase = (buffer[bin] >= 0.0f) ? 0.0f : juce::MathConstants<float>::pi;
         } else {
-            const float real = buffer[bin];
-            const float imag = buffer[bin + FFT_SIZE];
+            const float real = buffer[2 * bin];
+            const float imag = buffer[2 * bin + 1];
             magnitude = std::sqrt(real * real + imag * imag) * scale;
             phase = std::atan2(imag, real);
         }
@@ -119,11 +119,10 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
             buffer[bin] = magnitude * std::cos(phase);
         } else {
             magnitude /= scale;
-            buffer[bin] = magnitude * std::cos(phase);
-            buffer[bin + FFT_SIZE] = magnitude * std::sin(phase);
+            buffer[2 * bin] = magnitude * std::cos(phase);
+            buffer[2 * bin + 1] = magnitude * std::sin(phase);
         }
     }
-
     float magnitudeToDecibels(float magnitude) const {
         return (magnitude > MIN_MAGNITUDE_THRESHOLD) ? 20.0f * std::log10(magnitude)
                                                      : MIN_MAGNITUDE_DB;

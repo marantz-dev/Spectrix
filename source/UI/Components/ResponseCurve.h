@@ -4,6 +4,7 @@
 #include "PluginParameters.h"
 #include "UIutils.h"
 #include "juce_graphics/juce_graphics.h"
+#include "juce_gui_basics/juce_gui_basics.h"
 #include <JuceHeader.h>
 #include <array>
 #include <vector>
@@ -32,16 +33,19 @@ class ResponseCurve : public juce::Component {
     // #                #
     // ##################
 
+    // ---------------- MOUSE EVENTS ----------------
+    // ---------------- MOUSE EVENTS ----------------
     void mouseDown(const juce::MouseEvent &event) override {
-        auto bounds = getLocalBounds().toFloat();
         auto pos = event.position;
+        draggedPeakIndex = -1;
         bool clickedOnPeak = false;
+
+        // Check if clicked on an existing peak
         for(size_t i = 0; i < gaussians.size(); ++i) {
             auto &peak = gaussians[i];
             float peakX = frequencyToX(peak.frequency);
-            float peakY = DBtoY(peak.gainDB + responseCurveShiftDB); // Add shift BEFORE converting
-            float dist = pos.getDistanceFrom(juce::Point<float>(peakX, peakY));
-            if(dist <= 10.0f) {
+            float peakY = DBtoY(peak.gainDB + responseCurveShiftDB);
+            if(pos.getDistanceFrom({peakX, peakY}) <= 10.0f) {
                 clickedOnPeak = true;
                 draggedPeakIndex = (int)i;
                 dragOffset = {pos.x - peakX, pos.y - peakY};
@@ -49,51 +53,75 @@ class ResponseCurve : public juce::Component {
                 break;
             }
         }
+
         auto now = juce::Time::getCurrentTime();
-        if((now.toMilliseconds() - lastClickTime.toMilliseconds() < 400)
-           && lastClickPos.getDistanceFrom(event.position) < 5.0f) {
+        bool isDoubleClick = (now.toMilliseconds() - lastClickTime.toMilliseconds() < 400
+                              && lastClickPos.getDistanceFrom(event.position) < 5.0f);
+
+        if(isDoubleClick) {
             if(clickedOnPeak) {
+                // Double-click on a peak → delete it
                 responseCurve.deletePeak((size_t)draggedPeakIndex);
                 draggedPeakIndex = -1;
-                if(gaussians.empty()) {
-                    responseCurve.addPeak({1000.0f, 0.0f, 0.25f});
-                }
             } else {
-                float logFreq = xToLogFrequency(event.position.x);
-                float frequency = std::pow(10.0f, logFreq);
-                float gainDB = inverseDBWarp(event.position.y, bounds) - responseCurveShiftDB;
+                // Double-click on empty space → add new peak and select it
+                auto bounds = getLocalBounds().toFloat();
+                float logFreq = xToLogFrequency(pos.x);
+                float frequency = std::pow(10.0, logFreq);
+                float gainDB = inverseDBWarp(pos.y, bounds) - responseCurveShiftDB;
                 responseCurve.addPeak({frequency, gainDB, 0.15f});
+
+                // Select the new peak
+                draggedPeakIndex = (int)(gaussians.size() - 1);
+                dragOffset = {0.0f, 0.0f}; // center of peak
+                initialSigma = gaussians[draggedPeakIndex].sigmaNorm;
+                setMouseCursor(juce::MouseCursor::DraggingHandCursor);
             }
         }
+
         lastClickTime = now;
         lastClickPos = event.position;
+        mouseDownPos = event.position;
+        repaint();
+    }
+    void mouseDrag(const juce::MouseEvent &event) override {
+        if(draggedPeakIndex < 0 || draggedPeakIndex >= (int)gaussians.size())
+            return;
+
+        setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+
+        auto bounds = getLocalBounds().toFloat();
+        auto &peak = gaussians[draggedPeakIndex];
+
+        // --------- SHIFT + DRAG ---------
+        if(event.mods.isShiftDown()) {
+            float deltaY = event.position.y - mouseDownPos.y;
+
+            // Adjust sigma relative to vertical movement
+            float sigmaChange = -deltaY / bounds.getHeight(); // moving up increases sigma
+            peak.sigmaNorm = juce::jlimit(0.001, 2.0, (double)initialSigma + sigmaChange);
+
+            // X = frequency follows mouse
+            float newX = event.position.x;
+            newX = juce::jlimit(bounds.getX(), bounds.getRight(), newX);
+            float logFreq = xToLogFrequency(newX);
+            peak.frequency = std::pow(10.0, juce::jlimit(logMin, logMax, (double)logFreq));
+        } else {
+            // Normal drag = move both frequency and gain
+            float newX = event.position.x - dragOffset.x;
+            newX = juce::jlimit(bounds.getX(), bounds.getRight(), newX);
+            float logFreq = xToLogFrequency(newX);
+            peak.frequency = std::pow(10.0, juce::jlimit(logMin, logMax, (double)logFreq));
+
+            float newY = event.position.y - dragOffset.y;
+            newY = juce::jlimit(bounds.getY(), bounds.getBottom(), newY);
+            peak.gainDB = inverseDBWarp(newY, bounds) - responseCurveShiftDB;
+        }
+
         repaint();
     }
 
-    void mouseDrag(const juce::MouseEvent &event) override {
-        if(draggedPeakIndex >= 0 && draggedPeakIndex < (int)gaussians.size()) {
-            auto bounds = getLocalBounds().toFloat();
-            auto &peak = gaussians[draggedPeakIndex];
-            if(!event.mods.isShiftDown()) {
-                float newX = event.position.x - dragOffset.x;
-                newX = juce::jlimit(bounds.getX(), bounds.getRight(), newX);
-                float logFreq = xToLogFrequency(newX);
-                float newFrequency = std::pow(10.0f, logFreq);
-                float newY = event.position.y - dragOffset.y;
-                newY = juce::jlimit(bounds.getY(), bounds.getBottom(), newY);
-                float gainDB = inverseDBWarp(newY, bounds) - responseCurveShiftDB;
-                gaussians[draggedPeakIndex].frequency = newFrequency;
-                gaussians[draggedPeakIndex].gainDB = gainDB;
-            } else {
-                float deltaX = event.position.x - event.mouseDownPosition.x;
-                float sigmaChange = deltaX / bounds.getWidth() * 0.5f;
-                float newSigma = initialSigma + sigmaChange;
-                newSigma = juce::jlimit(0.001f, 2.0f, newSigma);
-                gaussians[draggedPeakIndex].sigmaNorm = newSigma;
-            }
-            repaint();
-        }
-    }
+    void mouseUp(const juce::MouseEvent &) override { draggedPeakIndex = -1; }
 
     void mouseMove(const juce::MouseEvent &event) override {
         auto pos = event.position;
@@ -113,8 +141,6 @@ class ResponseCurve : public juce::Component {
             repaint();
         }
     }
-
-    void mouseUp(const juce::MouseEvent &) override { draggedPeakIndex = -1; }
 
   private:
     // ##################
@@ -162,18 +188,19 @@ class ResponseCurve : public juce::Component {
             float peakX = frequencyToX(gaussian.frequency);
             float peakY = DBtoY(gaussian.gainDB + responseCurveShiftDB);
 
-            if((int)i == hoveredPeakIndex) {
-                g.setColour(juce::Colours::white); // hovered = white
+            bool isSelected = ((int)i == draggedPeakIndex) || ((int)i == hoveredPeakIndex);
+
+            if(isSelected) {
+                g.setColour(juce::Colours::white); // selected / hovered = white ring
                 g.fillEllipse(peakX - 10.0f, peakY - 10.0f, 20.0f, 20.0f);
-                g.setColour(juce::Colours::blueviolet); // normal = yellow
+                g.setColour(juce::Colours::blueviolet);
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             } else {
-                g.setColour(juce::Colours::blueviolet); // normal = yellow
+                g.setColour(juce::Colours::blueviolet);
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             }
         }
     }
-
     // #############
     // #           #
     // #  HELPERS  #
@@ -227,10 +254,10 @@ class ResponseCurve : public juce::Component {
     juce::Point<float> dragOffset;
 
     double sampleRate = 44100.0;
-    double minFreq = 20.0;
-    double maxFreq = 22050.0;
-    double logMin = std::log10(20.0);
-    double logMax = std::log10(22050.0);
+    double minFreq;
+    double maxFreq;
+    double logMin;
+    double logMax;
 
     juce::Time lastClickTime;
     juce::Point<float> lastClickPos;
@@ -243,4 +270,6 @@ class ResponseCurve : public juce::Component {
     float warpMidpoint = Parameters::warpMidPoint;
     float warpSteepness = Parameters::warpSteepness;
     float responseCurveShiftDB = Parameters::defaultCurveShiftDB;
+    bool doubleClickDragMode = false;
+    juce::Point<float> mouseDownPos;
 };
