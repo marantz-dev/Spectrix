@@ -21,6 +21,9 @@ class CompressionModeSection : public juce::Component {
         UIutils::setupToggleButton(compressorButton, "Compressor");
         addAndMakeVisible(compressorButton);
 
+        UIutils::setupToggleButton(expanderButton, "Expander");
+        addAndMakeVisible(expanderButton);
+
         UIutils::setupToggleButton(clipperButton, "Clipper");
         clipperButton.setToggleState(true, juce::dontSendNotification);
         addAndMakeVisible(clipperButton);
@@ -35,11 +38,18 @@ class CompressionModeSection : public juce::Component {
             }
             updateButtons();
         };
+        expanderButton.onClick = [this]() {
+            if(auto *param = dynamic_cast<juce::AudioParameterChoice *>(
+                vts.getParameter(Parameters::compressorModeID))) {
+                param->setValueNotifyingHost(param->convertTo0to1(1)); // "Compressor"
+            }
+            updateButtons();
+        };
 
         clipperButton.onClick = [this]() {
             if(auto *param = dynamic_cast<juce::AudioParameterChoice *>(
                 vts.getParameter(Parameters::compressorModeID))) {
-                param->setValueNotifyingHost(param->convertTo0to1(1)); // "Clipper"
+                param->setValueNotifyingHost(param->convertTo0to1(2)); // "Clipper"
             }
             updateButtons();
         };
@@ -47,7 +57,7 @@ class CompressionModeSection : public juce::Component {
         gateButton.onClick = [this]() {
             if(auto *param = dynamic_cast<juce::AudioParameterChoice *>(
                 vts.getParameter(Parameters::compressorModeID))) {
-                param->setValueNotifyingHost(param->convertTo0to1(2)); // "Gate"
+                param->setValueNotifyingHost(param->convertTo0to1(3)); // "Gate"
             }
             updateButtons();
         };
@@ -57,9 +67,12 @@ class CompressionModeSection : public juce::Component {
         auto bounds = getLocalBounds();
         compressorModeBorder.setBounds(bounds);
         bounds.reduce(30, 30);
-        int buttonheight = bounds.getHeight() / 3 - 10;
+        int buttonheight = bounds.getHeight() / 4 - 10;
 
         compressorButton.setBounds(bounds.withHeight(buttonheight));
+
+        bounds.reduce(0, buttonheight + 20);
+        expanderButton.setBounds(bounds.withHeight(buttonheight));
 
         bounds.reduce(0, buttonheight + 20);
         clipperButton.setBounds(bounds.withHeight(buttonheight));
@@ -74,14 +87,16 @@ class CompressionModeSection : public juce::Component {
          = dynamic_cast<AudioParameterChoice *>(vts.getParameter(Parameters::compressorModeID));
         int value = param->getIndex();
         compressorButton.setToggleState(value == 0, juce::dontSendNotification);
-        clipperButton.setToggleState(value == 1, juce::dontSendNotification);
-        gateButton.setToggleState(value == 2, juce::dontSendNotification);
+        expanderButton.setToggleState(value == 1, juce::dontSendNotification);
+        clipperButton.setToggleState(value == 2, juce::dontSendNotification);
+        gateButton.setToggleState(value == 3, juce::dontSendNotification);
     }
 
     juce::GroupComponent compressorModeBorder;
     AudioProcessorValueTreeState &vts;
 
     ToggleButton compressorButton;
+    ToggleButton expanderButton;
     ToggleButton gateButton;
     ToggleButton clipperButton;
 

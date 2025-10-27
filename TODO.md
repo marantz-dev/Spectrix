@@ -1,7 +1,7 @@
 - Check to update sample rates
 - CHeck prepare to plays and release resources
 - Figure out title stuff
-- BypassButton
+- Check Get and set state -> especially initial values for compressor mode
 
 BUGS:
 

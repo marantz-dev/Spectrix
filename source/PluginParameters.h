@@ -96,7 +96,7 @@ namespace Parameters {
         // Compressor MODE
         params.push_back(std::make_unique<AudioParameterChoice>(
          ParameterID(compressorModeID, id++), "Compressor Mode",
-         StringArray{"Compressor", "Clipper", "Gate"}, 0));
+         StringArray{"Compressor", "Expander", "Clipper", "Gate"}, 0));
 
         // Input Gain
         params.push_back(std::make_unique<AudioParameterFloat>(

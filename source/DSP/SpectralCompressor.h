@@ -9,7 +9,7 @@
 #include <vector>
 #include <cmath>
 
-enum CompressorMode { COMPRESSOR, CLIPPER, GATE };
+enum CompressorMode { COMPRESSOR, EXPANDER, CLIPPER, GATE };
 
 template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2>
 class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
@@ -136,6 +136,13 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
             float gainReductionDB = calculateGainReduction(magnitudeDB, thresholdDB);
             return applyEnvelopeFollower(bin, gainReductionDB);
         }
+        case EXPANDER: {
+            float gainIncreaseDB
+             = calculateGainReduction(magnitudeDB, thresholdDB); // >= 0 when above knee
+            float target
+             = (gainIncreaseDB > 0.0f) ? -gainIncreaseDB : 0.0f; // negative value -> boost
+            return applyEnvelopeFollower(bin, target);
+        }
         case CLIPPER: {
             float over = magnitudeDB - thresholdDB;
             float gainReductionDB = (over > 0.0f) ? over : 0.0f;
@@ -143,9 +150,9 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         }
         case GATE: {
             if(magnitudeDB < thresholdDB)
-                return applyEnvelopeFollower(bin, 100.0f); // 100 dB = praticamente muto
+                return applyEnvelopeFollower(bin, 100.0f); // 100 dB -> practically mute
             else
-                return applyEnvelopeFollower(bin, 0.0f); // nessuna riduzione
+                return applyEnvelopeFollower(bin, 0.0f); // no reduction
         }
         default: return 0.0f;
         }
@@ -197,7 +204,7 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     std::array<float, NUM_BINS> gainReductionArray{};
     std::array<float, NUM_BINS> envelopeFollowers{};
 
-    CompressorMode mode = CompressorMode(1);
+    CompressorMode mode = COMPRESSOR;
 
     float ratio = 4.0f;
     float kneeWidthDB = 3.0f;
