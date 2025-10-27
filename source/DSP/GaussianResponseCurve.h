@@ -39,8 +39,6 @@ class GaussianResponseCurve {
     ValueTree toValueTree() const {
         ValueTree tree("GaussianResponse");
 
-        tree.setProperty("responseCurveShiftDB", responseCurveShiftDB, nullptr);
-
         ValueTree peaksTree("Peaks");
         for(const auto &peak : gaussians) {
             ValueTree peakNode("Peak");
@@ -56,9 +54,6 @@ class GaussianResponseCurve {
 
     void fromValueTree(const ValueTree &tree) {
         const std::lock_guard<std::mutex> lock(mutex);
-
-        responseCurveShiftDB
-         = (float)tree.getProperty("responseCurveShiftDB", Parameters::defaultCurveShiftDB);
         gaussians.clear();
 
         if(auto peaksTree = tree.getChildWithName("Peaks"); peaksTree.isValid()) {

@@ -13,6 +13,7 @@ juce_add_plugin(
   NEEDS_MIDI_OUTPUT FALSE
   EDITOR_WANTS_KEYBOARD_FOCUS TRUE
 )
+
 juce_generate_juce_header(Spectrix)
 
 # Automatically add all source and header files
