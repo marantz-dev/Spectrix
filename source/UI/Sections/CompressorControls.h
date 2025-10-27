@@ -15,6 +15,7 @@ class CompressorSection : public juce::Component {
         addAndMakeVisible(compressorSectionBorder);
         compressorSectionBorder.setText("Compressor");
         compressorSectionBorder.setTextLabelPosition(juce::Justification::centred);
+        compressorSectionBorder.setAlpha(0.4);
 
         // ###################
         // #                 #

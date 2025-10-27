@@ -25,8 +25,8 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
     gainControlSection.setLookAndFeel(&theme);
     compressionModeSection.setLookAndFeel(&theme);
 
-    pluginTitleImage = juce::ImageFileFormat::loadFrom(
-     juce::File("/Users/riccardomarantonio/Desktop/SPECTRIX-26-10-2025.png"));
+    pluginTitleImage
+     = juce::ImageFileFormat::loadFrom(juce::File("/Users/riccardomarantonio/Desktop/LOGO.png"));
 
     setSize(1422, 800);
 }
@@ -55,10 +55,10 @@ void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
                            topSectionBounds.getBottomRight().toFloat());
     g.drawLine(line, 2.0f);
 
-    juce::ColourGradient gradient(juce::Colours::blueviolet.darker(7), 0, 0, juce::Colours::black,
-                                  0, getHeight(), false);
+    juce::ColourGradient gradient(juce::Colours::blueviolet.darker(5), 0, 0,
+                                  juce::Colours::blueviolet.darker(15), 0, getHeight(), false);
     g.setGradientFill(gradient);
-    g.fillRect(topSectionBounds);
+    g.fillRect(bounds);
 
     if(pluginTitleImage.isValid()) {
         g.drawImage(pluginTitleImage, 10, 10, 266, 55, 0, 0, pluginTitleImage.getWidth(),

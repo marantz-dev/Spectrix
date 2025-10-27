@@ -1,5 +1,6 @@
 
 #pragma once
+#include "juce_graphics/juce_graphics.h"
 #include <JuceHeader.h>
 
 class Theme : public juce::LookAndFeel_V4 {
@@ -91,48 +92,78 @@ class Theme : public juce::LookAndFeel_V4 {
         auto isHovered = shouldDrawButtonAsHighlighted;
         auto isEnabled = button.isEnabled();
 
-        auto backgroundColor = juce::Colour(0xff3a3a3a);
-        auto onColor = juce::Colour(0xffff9500);
-        auto offColor = juce::Colour(0xff464646);
-        auto hoverColor = juce::Colour(0xff525252);
-        auto textOffColor = juce::Colour(0xffcccccc);
-        auto textOnColor = juce::Colour(0xff000000);
+        // Synthwave color palette
+        auto backgroundColor = juce::Colour(0xff1a0a2e); // Deep purple background
+        auto onColor = juce::Colour(0xff0f6a7e);         // Hot pink/magenta
+        auto offColor = juce::Colour(0xff2d1b4e);        // Dark purple
+        auto hoverColor = juce::Colour(0xff3d2b5e);      // Lighter purple
+        auto textOffColor = juce::Colour(0xffb794f6);    // Light purple
+        auto textOnColor = juce::Colour(0xffffffff);     // White for contrast
+        auto glowColor = juce::Colour(0xffff006e);       // Neon pink glow
 
         juce::Colour buttonColor;
         if(isToggleOn) {
-            buttonColor = isButtonDown ? onColor.darker(0.15f) : onColor;
+            buttonColor = isButtonDown ? onColor.darker(0.2f) : onColor;
         } else {
             if(isButtonDown) {
-                buttonColor = offColor.darker(0.1f);
+                buttonColor = offColor.darker(0.15f);
             } else if(isHovered) {
                 buttonColor = hoverColor;
             } else {
                 buttonColor = offColor;
             }
         }
+
         if(!isEnabled) {
-            buttonColor = juce::Colour(0xff3a3a3a).withAlpha(0.5f);
-            textOffColor = textOffColor.withAlpha(0.5f);
-            textOnColor = textOnColor.withAlpha(0.5f);
+            buttonColor = buttonColor.withAlpha(0.4f);
+            textOffColor = textOffColor.withAlpha(0.4f);
+            textOnColor = textOnColor.withAlpha(0.4f);
         }
 
-        auto cornerRadius = 2.0f;
+        auto cornerRadius = 3.0f;
 
+        // Add outer glow effect when toggled on
+        if(isToggleOn && isEnabled) {
+            auto glowBounds = bounds.expanded(2.0f);
+            g.setColour(glowColor.withAlpha(0.3f));
+            g.fillRoundedRectangle(glowBounds, cornerRadius + 1.0f);
+
+            glowBounds = bounds.expanded(1.0f);
+            g.setColour(glowColor.withAlpha(0.5f));
+            g.fillRoundedRectangle(glowBounds, cornerRadius + 0.5f);
+        }
+
+        // Main button fill
         g.setColour(buttonColor);
         g.fillRoundedRectangle(bounds, cornerRadius);
 
-        g.setColour(backgroundColor.darker(0.2f).withAlpha(0.3f));
-        g.drawRoundedRectangle(bounds, cornerRadius, 0.5f);
+        // Neon-style border
+        if(isToggleOn) {
+            g.setColour(glowColor.brighter(0.3f));
+            g.drawRoundedRectangle(bounds, cornerRadius, 1.5f);
+        } else {
+            // Subtle cyan/blue border for off state (classic synthwave accent)
+            g.setColour(juce::Colour(0xff00d9ff).withAlpha(0.3f));
+            g.drawRoundedRectangle(bounds, cornerRadius, 1.0f);
+        }
 
+        // Optional: Add subtle gradient overlay for depth
+        juce::ColourGradient gradient(buttonColor.brighter(0.1f), bounds.getX(), bounds.getY(),
+                                      buttonColor.darker(0.15f), bounds.getX(), bounds.getBottom(),
+                                      false);
+        g.setGradientFill(gradient);
+        g.setOpacity(0.3f);
+        g.fillRoundedRectangle(bounds.reduced(0.5f), cornerRadius - 0.5f);
+
+        // Button text
         if(button.getButtonText().isNotEmpty()) {
+            g.setOpacity(1.0f);
             g.setColour(isToggleOn ? textOnColor : textOffColor);
-            g.setFont(juce::FontOptions(bounds.getHeight() * 0.5f, juce::Font::plain));
-            // g.setFont(juce::Font(bounds.getHeight() * 0.5f, juce::Font::plain));
+            g.setFont(juce::FontOptions(bounds.getHeight() * 0.5f, juce::Font::bold));
             g.drawFittedText(button.getButtonText(), bounds.toNearestInt(),
                              juce::Justification::centred, 1);
         }
     }
-
     // ##########################################
     // #                                        #
     // #  MAKE CURSOR GO KAPUT WHEN PRESSED :)  #

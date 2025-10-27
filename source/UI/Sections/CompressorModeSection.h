@@ -4,6 +4,7 @@
 #include <JuceHeader.h>
 #include "PluginParameters.h"
 #include "UIutils.h"
+#include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
 using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
@@ -12,9 +13,10 @@ class CompressionModeSection : public juce::Component {
   public:
     CompressionModeSection(AudioProcessorValueTreeState &apvts) : vts(apvts) {
         // Group box
-        addAndMakeVisible(compressorSectionBorder);
-        compressorSectionBorder.setText("MODE");
-        compressorSectionBorder.setTextLabelPosition(juce::Justification::centred);
+        addAndMakeVisible(compressorModeBorder);
+        compressorModeBorder.setText("MODE");
+        compressorModeBorder.setTextLabelPosition(juce::Justification::centred);
+        compressorModeBorder.setAlpha(0.4);
 
         UIutils::setupToggleButton(compressorButton, "Compressor");
         addAndMakeVisible(compressorButton);
@@ -53,7 +55,7 @@ class CompressionModeSection : public juce::Component {
     ~CompressionModeSection() override {}
     void resized() override {
         auto bounds = getLocalBounds();
-        compressorSectionBorder.setBounds(bounds);
+        compressorModeBorder.setBounds(bounds);
         bounds.reduce(30, 30);
         int buttonheight = bounds.getHeight() / 3 - 10;
 
@@ -76,7 +78,7 @@ class CompressionModeSection : public juce::Component {
         gateButton.setToggleState(value == 2, juce::dontSendNotification);
     }
 
-    juce::GroupComponent compressorSectionBorder;
+    juce::GroupComponent compressorModeBorder;
     AudioProcessorValueTreeState &vts;
 
     ToggleButton compressorButton;

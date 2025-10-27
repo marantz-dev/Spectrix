@@ -11,9 +11,10 @@ class GainControlSection : public juce::Component {
   public:
     GainControlSection(AudioProcessorValueTreeState &apvts) : vts(apvts) {
         // Group box
-        addAndMakeVisible(compressorSectionBorder);
-        compressorSectionBorder.setText("Gain");
-        compressorSectionBorder.setTextLabelPosition(juce::Justification::centred);
+        addAndMakeVisible(gainContrlsBorder);
+        gainContrlsBorder.setText("Gain");
+        gainContrlsBorder.setTextLabelPosition(juce::Justification::centred);
+        gainContrlsBorder.setAlpha(0.4);
 
         // ###################
         // #                 #
@@ -54,7 +55,7 @@ class GainControlSection : public juce::Component {
 
     void resized() override {
         auto bounds = getLocalBounds();
-        compressorSectionBorder.setBounds(bounds);
+        gainContrlsBorder.setBounds(bounds);
 
         bounds.reduce(30, 30);
 
@@ -67,7 +68,7 @@ class GainControlSection : public juce::Component {
     }
 
   private:
-    juce::GroupComponent compressorSectionBorder;
+    juce::GroupComponent gainContrlsBorder;
     AudioProcessorValueTreeState &vts;
 
     Slider inputGainSlider;
