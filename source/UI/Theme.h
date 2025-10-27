@@ -144,7 +144,7 @@ class Theme : public juce::LookAndFeel_V4 {
         // Button text
         if(button.getButtonText().isNotEmpty()) {
             g.setColour(isToggleOn ? textOnColor : textOffColor);
-            g.setFont(juce::FontOptions(bounds.getHeight() * 0.35f, juce::Font::bold));
+            g.setFont(juce::FontOptions(bounds.getHeight() * 0.45f, juce::Font::bold));
             g.drawFittedText(button.getButtonText(), bounds.toNearestInt(),
                              juce::Justification::centred, 1);
         }

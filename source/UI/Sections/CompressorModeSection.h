@@ -66,18 +66,18 @@ class CompressionModeSection : public juce::Component {
     void resized() override {
         auto bounds = getLocalBounds();
         compressorModeBorder.setBounds(bounds);
-        bounds.reduce(30, 30);
-        int buttonheight = bounds.getHeight() / 4 - 10;
+        bounds.reduce(60, 40);
+        int buttonheight = bounds.getHeight() / 4 - 5;
 
         compressorButton.setBounds(bounds.withHeight(buttonheight));
 
-        bounds.reduce(0, buttonheight + 20);
+        bounds.reduce(0, buttonheight + 10);
         expanderButton.setBounds(bounds.withHeight(buttonheight));
 
-        bounds.reduce(0, buttonheight + 20);
+        bounds.reduce(0, buttonheight + 10);
         clipperButton.setBounds(bounds.withHeight(buttonheight));
 
-        bounds.reduce(0, buttonheight + 20);
+        bounds.reduce(0, buttonheight + 10);
         gateButton.setBounds(bounds.withHeight(buttonheight));
     }
 

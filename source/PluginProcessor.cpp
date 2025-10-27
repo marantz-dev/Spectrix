@@ -21,14 +21,15 @@ void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     spectralCompressor.prepareToPlay(sampleRate);
     setLatencySamples(2 * Parameters::FFT_SIZE - 2);
 
-    static_cast<SpectrixAudioProcessorEditor *>(getActiveEditor())
-     ->prepareToPlay(sampleRate, samplesPerBlock);
+    if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor())) {
+        editor->prepareToPlay(sampleRate, samplesPerBlock);
+    }
+
     inputGain.reset(sampleRate, 0.05);
     inputGain.setCurrentAndTargetValue(1.0);
     outputGain.reset(sampleRate, 0.05);
     outputGain.setCurrentAndTargetValue(1.0);
 }
-
 void SpectrixAudioProcessor::releaseResources() {}
 
 void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,

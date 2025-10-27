@@ -17,6 +17,13 @@ class ResponseCurve : public juce::Component {
     ResponseCurve(GaussianResponseCurve &responseCurveReference, double sampleRateHz)
         : responseCurve(responseCurveReference), sampleRate(sampleRateHz),
           gaussians(responseCurveReference.getGaussianPeaks()) {
+        dragInfoLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        dragInfoLabel.setColour(juce::Label::backgroundColourId,
+                                juce::Colours::black.withAlpha(0.7f));
+        dragInfoLabel.setJustificationType(juce::Justification::centred);
+        dragInfoLabel.setVisible(false);
+        dragInfoLabel.setInterceptsMouseClicks(false, false); // don't block dragging
+        addAndMakeVisible(dragInfoLabel);
         updateLogFreqBounds();
     }
 
@@ -98,35 +105,49 @@ class ResponseCurve : public juce::Component {
         auto bounds = getLocalBounds().toFloat();
         auto &peak = gaussians[draggedPeakIndex];
 
-        // --------- SHIFT + DRAG ---------
+        // --- existing drag logic ---
         if(event.mods.isShiftDown()) {
             float deltaY = event.position.y - mouseDownPos.y;
-
-            // Adjust sigma relative to vertical movement
-            float sigmaChange = -deltaY / bounds.getHeight(); // moving up increases sigma
+            float sigmaChange = -deltaY / bounds.getHeight();
             peak.sigmaNorm = juce::jlimit(0.001, 2.0, (double)initialSigma + sigmaChange);
-
-            // X = frequency follows mouse
-            float newX = event.position.x;
-            newX = juce::jlimit(bounds.getX(), bounds.getRight(), newX);
-            float logFreq = xToLogFrequency(newX);
+            float logFreq
+             = xToLogFrequency(juce::jlimit(bounds.getX(), bounds.getRight(), event.position.x));
             peak.frequency = std::pow(10.0, juce::jlimit(logMin, logMax, (double)logFreq));
         } else {
-            // Normal drag = move both frequency and gain
-            float newX = event.position.x - dragOffset.x;
-            newX = juce::jlimit(bounds.getX(), bounds.getRight(), newX);
-            float logFreq = xToLogFrequency(newX);
-            peak.frequency = std::pow(10.0, juce::jlimit(logMin, logMax, (double)logFreq));
-
-            float newY = event.position.y - dragOffset.y;
-            newY = juce::jlimit(bounds.getY(), bounds.getBottom(), newY);
+            float newX
+             = juce::jlimit(bounds.getX(), bounds.getRight(), event.position.x - dragOffset.x);
+            float newY
+             = juce::jlimit(bounds.getY(), bounds.getBottom(), event.position.y - dragOffset.y);
+            peak.frequency = std::pow(10.0, xToLogFrequency(newX));
             peak.gainDB = inverseDBWarp(newY, bounds) - responseCurveShiftDB;
         }
+
+        dragInfoLabel.setVisible(true);
+        dragInfoLabel.setText(juce::String(peak.frequency, 1) + " Hz", juce::dontSendNotification);
+
+        // Position near the peak
+        float peakX = frequencyToX(peak.frequency);
+        float peakY = DBtoY(peak.gainDB + responseCurveShiftDB);
+        int labelWidth = 80;
+        int labelHeight = 18;
+
+        // Compute desired position
+        float x = peakX - labelWidth / 2;
+        float y = peakY - 40;
+
+        // Clamp so label stays inside component
+        x = juce::jlimit(bounds.getX(), bounds.getRight() - labelWidth, x);
+        y = juce::jlimit(bounds.getY(), bounds.getBottom() - labelHeight, y);
+
+        dragInfoLabel.setBounds((int)x, (int)y, labelWidth, labelHeight);
 
         repaint();
     }
 
-    void mouseUp(const juce::MouseEvent &) override { draggedPeakIndex = -1; }
+    void mouseUp(const juce::MouseEvent &) override {
+        draggedPeakIndex = -1;
+        dragInfoLabel.setVisible(false);
+    }
 
     void mouseMove(const juce::MouseEvent &event) override {
         auto pos = event.position;
@@ -217,6 +238,8 @@ class ResponseCurve : public juce::Component {
                 g.setColour(peakColour);
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             } else {
+                g.setColour(juce::Colours::grey); // selected / hovered = white ring
+                g.fillEllipse(peakX - 9.0f, peakY - 9.0f, 18.0f, 18.0f);
                 g.setColour(peakColour);
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             }
@@ -311,4 +334,5 @@ class ResponseCurve : public juce::Component {
     float responseCurveShiftDB = Parameters::defaultCurveShiftDB;
     bool doubleClickDragMode = false;
     juce::Point<float> mouseDownPos;
+    juce::Label dragInfoLabel;
 };

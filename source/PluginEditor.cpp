@@ -81,8 +81,9 @@ void SpectrixAudioProcessorEditor::resized() {
     bottomSectionBounds.removeFromTop(bounds.getHeight() * 0.7 + 10);
     bottomSectionBounds.reduce(20, 0);
 
-    spectrumSection.setBounds(topSectionBounds.withTrimmedRight(bounds.getWidth() * 0.025));
     meteringSecttion.setBounds(topSectionBounds.withTrimmedLeft(bounds.getWidth() * 0.975));
+    spectrumSection.setBounds(topSectionBounds.withTrimmedRight(bounds.getWidth() * 0.025)
+                               .removeFromBottom(topSectionBounds.getHeight() - 75));
 
     int trim = bottomSectionBounds.getWidth() * 0.2 + 40;
     compressorControlsSection.setBounds(
