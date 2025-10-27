@@ -57,7 +57,7 @@ void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
     g.drawLine(line, 2.0f);
 
     juce::ColourGradient gradient(juce::Colours::blueviolet.darker(5), 0, 0,
-                                  juce::Colours::cyan.darker(5), 0, getHeight(), false);
+                                  juce::Colours::cyan.darker(8), 0, getHeight(), false);
     g.setGradientFill(gradient);
     g.fillRect(bounds);
 

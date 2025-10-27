@@ -7,7 +7,8 @@
 template <int FFTSize>
 class SpectralGainReductionVisualizer : public juce::Component, private juce::Timer {
   public:
-    SpectralGainReductionVisualizer(SpectralCompressor<FFTSize> &compressorRef, double sampleRateHz)
+    SpectralGainReductionVisualizer(SpectralDynamicsProcessor<FFTSize> &compressorRef,
+                                    double sampleRateHz)
         : compressor(compressorRef), sampleRate(sampleRateHz) {
         gainReductions.resize((size_t)FFTSize / 2 + 1, 0.0f);
         startTimerHz(60);
@@ -136,7 +137,7 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
         }
     }
 
-    SpectralCompressor<FFTSize> &compressor;
+    SpectralDynamicsProcessor<FFTSize> &compressor;
     std::vector<float> gainReductions;
     double sampleRate;
 };

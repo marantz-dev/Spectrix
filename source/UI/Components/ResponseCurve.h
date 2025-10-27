@@ -3,6 +3,7 @@
 #include "GaussianResponseCurve.h"
 #include "PluginParameters.h"
 #include "UIutils.h"
+#include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <JuceHeader.h>
@@ -21,6 +22,8 @@ class ResponseCurve : public juce::Component {
 
     void paint(juce::Graphics &g) override {
         responseCurveShiftDB = responseCurve.getResponseCurveShiftDB();
+        if(responseCurve.getGaussianPeaks().size() == 0)
+            responseCurve.addPeak({1000.0f, 0.0f, 0.25f});
         drawGaussianCurves(g);
         drawSumOfGaussians(g);
         drawGaussianPeaks(g);
@@ -62,6 +65,8 @@ class ResponseCurve : public juce::Component {
             if(clickedOnPeak) {
                 // Double-click on a peak → delete it
                 responseCurve.deletePeak((size_t)draggedPeakIndex);
+                if(responseCurve.getGaussianPeaks().size() == 0)
+                    responseCurve.addPeak({1000.0f, 0.0f, 0.25f});
                 draggedPeakIndex = -1;
             } else {
                 // Double-click on empty space → add new peak and select it
@@ -151,17 +156,32 @@ class ResponseCurve : public juce::Component {
 
     void drawGaussianCurves(juce::Graphics &g) {
         auto bounds = getLocalBounds().toFloat();
-        for(auto &gaussian : gaussians) {
+        for(size_t i = 0; i < gaussians.size(); ++i) {
+            auto &gaussian = gaussians[i];
+
+            juce::Colour curveColour = getPeakColour(gaussian.frequency);
+
+            bool isSelected = ((int)i == draggedPeakIndex) || ((int)i == hoveredPeakIndex);
+
+            float alpha = isSelected ? 0.4f : 0.205f;
+            float strokeWidth = isSelected ? 2.5f : 2.0f;
+
             juce::Path path;
             for(int x = 0; x <= (int)bounds.getWidth(); ++x) {
                 float logFrequency = xToLogFrequency(bounds.getX() + x);
                 float gaussianValue = gaussianAtLogFrequency(logFrequency, gaussian);
-                float y = DBtoY(gaussianValue
-                                + responseCurveShiftDB); // Add shift to value before converting
+                float y = DBtoY(gaussianValue + responseCurveShiftDB);
+                if(x == 0 || x == (int)bounds.getWidth())
+                    y = DBtoY(responseCurveShiftDB);
                 x == 0 ? path.startNewSubPath(bounds.getX(), y) : path.lineTo(bounds.getX() + x, y);
             }
-            g.setColour(juce::Colours::aliceblue.withAlpha(0.2f));
-            g.strokePath(path, juce::PathStrokeType(2.0f));
+
+            path.closeSubPath();
+            g.setColour(curveColour.withAlpha(alpha - 0.2f));
+            g.fillPath(path);
+
+            g.setColour(curveColour.withAlpha(alpha));
+            g.strokePath(path, juce::PathStrokeType(strokeWidth));
         }
     }
 
@@ -189,14 +209,15 @@ class ResponseCurve : public juce::Component {
             float peakY = DBtoY(gaussian.gainDB + responseCurveShiftDB);
 
             bool isSelected = ((int)i == draggedPeakIndex) || ((int)i == hoveredPeakIndex);
+            juce::Colour peakColour = getPeakColour(gaussian.frequency);
 
             if(isSelected) {
                 g.setColour(juce::Colours::white); // selected / hovered = white ring
                 g.fillEllipse(peakX - 10.0f, peakY - 10.0f, 20.0f, 20.0f);
-                g.setColour(juce::Colours::blueviolet);
+                g.setColour(peakColour);
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             } else {
-                g.setColour(juce::Colours::blueviolet);
+                g.setColour(peakColour);
                 g.fillEllipse(peakX - 7.5f, peakY - 7.5f, 15.0f, 15.0f);
             }
         }
@@ -239,6 +260,24 @@ class ResponseCurve : public juce::Component {
         return gaussian.gainDB * gaussianLinear;
     }
 
+    juce::Colour getPeakColour(double frequency) const {
+        float freq = juce::jlimit((float)minFreq, (float)maxFreq, (float)frequency);
+
+        if(freq <= 250.0f) {
+            float localT = juce::jmap<float>(freq, (float)minFreq, 250.0f, 0.0f, 1.0f);
+            return juce::Colours::red.interpolatedWith(juce::Colours::magenta, localT);
+        } else if(freq <= 1000.0f) {
+            float localT = juce::jmap<float>(freq, 250.0f, 1000.0f, 0.0f, 1.0f);
+            return juce::Colours::magenta.interpolatedWith(juce::Colours::purple, localT);
+        } else if(freq <= 4000.0f) {
+            float localT = juce::jmap<float>(freq, 1000.0f, 4000.0f, 0.0f, 1.0f);
+            return juce::Colours::purple.interpolatedWith(juce::Colours::blue, localT);
+        } else {
+            float localT = juce::jmap<float>(freq, 4000.0f, (float)maxFreq, 0.0f, 1.0f);
+            localT = juce::jlimit(0.0f, 1.0f, localT);
+            return juce::Colours::blue.interpolatedWith(juce::Colours::cyan, localT);
+        }
+    }
     void updateLogFreqBounds() {
         minFreq = 20.0;
         maxFreq = sampleRate * 0.5;

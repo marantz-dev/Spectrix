@@ -19,7 +19,7 @@ SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
 //==============================================================================
 void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     spectralCompressor.prepareToPlay(sampleRate);
-    setLatencySamples(Parameters::FFT_SIZE - 1);
+    setLatencySamples(2 * Parameters::FFT_SIZE - 2);
 
     static_cast<SpectrixAudioProcessorEditor *>(getActiveEditor())
      ->prepareToPlay(sampleRate, samplesPerBlock);

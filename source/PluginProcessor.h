@@ -56,7 +56,7 @@ class SpectrixAudioProcessor : public juce::AudioProcessor,
     }
 
     GaussianResponseCurve responseCurve;
-    SpectralCompressor<Parameters::FFT_SIZE> spectralCompressor;
+    SpectralDynamicsProcessor<Parameters::FFT_SIZE> spectralCompressor;
     SpectralVisualizer<Parameters::FFT_SIZE> spectralVisualizer;
 
     SmoothedValue<float, ValueSmoothingTypes::Linear> inputGain, outputGain;

@@ -12,9 +12,9 @@
 enum CompressorMode { COMPRESSOR, CLIPPER, GATE };
 
 template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2>
-class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
+class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
   public:
-    SpectralCompressor(GaussianResponseCurve &responseCurveReference)
+    SpectralDynamicsProcessor(GaussianResponseCurve &responseCurveReference)
         : FFTProcessor<FFT_SIZE, NUM_CHANNELS>(), responseCurve(responseCurveReference) {
         envelopeFollowers.fill(0.0f);
     }
@@ -215,5 +215,5 @@ class SpectralCompressor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
 
     GaussianResponseCurve &responseCurve;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralCompressor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralDynamicsProcessor)
 };
