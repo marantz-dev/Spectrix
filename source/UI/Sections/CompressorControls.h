@@ -23,19 +23,19 @@ class CompressorSection : public juce::Component {
         // #                 #
         // ###################
 
-        UIutils::setupSlider(inputGainSlider, juce::Slider::RotaryHorizontalVerticalDrag,
+        UIutils::setupSlider(attackSlider, juce::Slider::RotaryHorizontalVerticalDrag,
                              Parameters::minAttack, Parameters::maxAttack,
                              Parameters::defaultAttackTime, Parameters::stepSizeAttack, " ms",
-                             Parameters::skewFactorAttack, inputGainLabel, "Attack");
-        addAndMakeVisible(inputGainSlider);
-        addAndMakeVisible(inputGainLabel);
+                             Parameters::skewFactorAttack, attackLabel, "Attack");
+        addAndMakeVisible(attackSlider);
+        addAndMakeVisible(attackLabel);
 
-        UIutils::setupSlider(outputGainSlider, juce::Slider::RotaryHorizontalVerticalDrag,
+        UIutils::setupSlider(releaseSlider, juce::Slider::RotaryHorizontalVerticalDrag,
                              Parameters::minRelease, Parameters::maxRelease,
                              Parameters::defaultReleaseTime, Parameters::stepSizeRelease, " ms",
-                             Parameters::skewFactorRelease, outputgainLabel, "Release");
-        addAndMakeVisible(outputGainSlider);
-        addAndMakeVisible(outputgainLabel);
+                             Parameters::skewFactorRelease, releaseLabel, "Release");
+        addAndMakeVisible(releaseSlider);
+        addAndMakeVisible(releaseLabel);
 
         UIutils::setupSlider(curveShiftSlider, juce::Slider::RotaryHorizontalVerticalDrag,
                              Parameters::minCurveShift, Parameters::maxCurveShift,
@@ -73,9 +73,9 @@ class CompressorSection : public juce::Component {
         // ########################
 
         inputGainAttachment.reset(
-         new SliderAttachment(vts, Parameters::attackTimeID, inputGainSlider));
+         new SliderAttachment(vts, Parameters::attackTimeID, attackSlider));
         outputGainAttachment.reset(
-         new SliderAttachment(vts, Parameters::releaseTimeID, outputGainSlider));
+         new SliderAttachment(vts, Parameters::releaseTimeID, releaseSlider));
         thresholdAttachment.reset(
          new SliderAttachment(vts, Parameters::curveShiftDBID, curveShiftSlider));
         ratioAttachment.reset(new SliderAttachment(vts, Parameters::ratioID, ratioSlider));
@@ -97,14 +97,14 @@ class CompressorSection : public juce::Component {
         bounds.reduce(30, 30);
 
         auto knobWidth = bounds.getWidth() / 5;
-        inputGainSlider.setBounds(bounds.removeFromLeft(knobWidth).reduced(5));
-        outputGainSlider.setBounds(bounds.removeFromLeft(knobWidth).reduced(5));
+        attackSlider.setBounds(bounds.removeFromLeft(knobWidth).reduced(5));
+        releaseSlider.setBounds(bounds.removeFromLeft(knobWidth).reduced(5));
         curveShiftSlider.setBounds(bounds.removeFromLeft(knobWidth).reduced(5));
         ratioSlider.setBounds(bounds.removeFromLeft(knobWidth).reduced(5));
         kneeSlider.setBounds(bounds.reduced(5));
 
-        UIutils::attachLabel(inputGainLabel, &inputGainSlider);
-        UIutils::attachLabel(outputgainLabel, &outputGainSlider);
+        UIutils::attachLabel(attackLabel, &attackSlider);
+        UIutils::attachLabel(releaseLabel, &releaseSlider);
         UIutils::attachLabel(thresholdLabel, &curveShiftSlider);
         UIutils::attachLabel(ratioLabel, &ratioSlider);
         UIutils::attachLabel(kneeLabel, &kneeSlider);
@@ -114,14 +114,14 @@ class CompressorSection : public juce::Component {
     juce::GroupComponent compressorSectionBorder;
     AudioProcessorValueTreeState &vts;
 
-    Slider inputGainSlider;
-    Slider outputGainSlider;
+    Slider attackSlider;
+    Slider releaseSlider;
     Slider curveShiftSlider;
     Slider ratioSlider;
     Slider kneeSlider;
 
-    Label inputGainLabel;
-    Label outputgainLabel;
+    Label attackLabel;
+    Label releaseLabel;
     Label thresholdLabel;
     Label ratioLabel;
     Label kneeLabel;

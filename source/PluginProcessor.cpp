@@ -13,11 +13,11 @@ SpectrixAudioProcessor::SpectrixAudioProcessor()
 
 {
     Parameters::addListeners(parameters, this);
-    for(auto *param : parameters.processor.getParameters()) {
-        if(auto *rangedParam = dynamic_cast<RangedAudioParameter *>(param)) {
-            parameterChanged(rangedParam->getParameterID(), rangedParam->getValue());
-        }
-    }
+    // for(auto *param : parameters.processor.getParameters()) {
+    //     if(auto *rangedParam = dynamic_cast<RangedAudioParameter *>(param)) {
+    //         parameterChanged(rangedParam->getParameterID(), rangedParam->getValue());
+    //     }
+    // }
 }
 
 SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
