@@ -19,7 +19,7 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         envelopeFollowers.fill(0.0f);
     }
 
-    void setCompressorMode(int newMode) { mode = CompressorMode(newMode); }
+    void setCompressorMode(CompressorMode newMode) { mode = newMode; }
 
     std::array<float, FFT_SIZE / 2 + 1> getGainReductionArray() const { return gainReductionArray; }
 

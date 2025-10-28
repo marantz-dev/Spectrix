@@ -11,7 +11,7 @@ namespace Parameters {
     static const String attackTimeID = "AT";
     static const String releaseTimeID = "RT";
     static const String kneeWidthID = "KW";
-    static const String compressorModeID = "IC";
+    static const String compressorModeID = "CM";
     static const String inputGainID = "IG";
     static const String outputGainID = "OG";
     static const String ratioID = "RA";
@@ -21,10 +21,10 @@ namespace Parameters {
     static const float defaultAttackTime = 10.0f;   // ms
     static const float defaultReleaseTime = 100.0f; // ms
     static const float defaultKneeWidth = 3.0f;     // dB
-    static const bool defaultCompressorMode = 0;
-    static const float defaultInputGain = 0.0f;  // dB
-    static const float defaultOutputGain = 0.0f; // dB
+    static const float defaultInputGain = 0.0f;     // dB
+    static const float defaultOutputGain = 0.0f;    // dB
     static const float defaultRatio = 4.0f;
+    static const int defaultCompressorMode = 0;
 
     // MIN MAX BOUNDS
     static const float minAttack = 1.0f;
@@ -96,7 +96,7 @@ namespace Parameters {
         // Compressor MODE
         params.push_back(std::make_unique<AudioParameterChoice>(
          ParameterID(compressorModeID, id++), "Compressor Mode",
-         StringArray{"Compressor", "Expander", "Clipper", "Gate"}, 0));
+         StringArray{"Compressor", "Expander", "Clipper", "Gate"}, defaultCompressorMode));
 
         // Input Gain
         params.push_back(std::make_unique<AudioParameterFloat>(

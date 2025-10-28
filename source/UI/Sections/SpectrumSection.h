@@ -15,7 +15,7 @@ class SpectrumSection : public juce::Component {
     SpectrumSection(SpectrixAudioProcessor &p)
         : audioProcessor(p),
           spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate(),
-                          juce::Colours::cyan.darker(1.5f)),
+                          juce::Colours::cyan.darker(1.0f)),
           gainReductionVisualizer(audioProcessor.spectralCompressor,
                                   audioProcessor.getSampleRate()),
           responseCurve(audioProcessor.responseCurve, audioProcessor.getSampleRate()),

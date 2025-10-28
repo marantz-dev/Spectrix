@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "PluginParameters.h"
+#include "SpectralCompressor.h"
 
 //==============================================================================
 SpectrixAudioProcessor::SpectrixAudioProcessor()
@@ -8,10 +9,15 @@ SpectrixAudioProcessor::SpectrixAudioProcessor()
                       .withInput("Input", AudioChannelSet::stereo(), true)
                       .withOutput("Output", AudioChannelSet::stereo(), true)),
       spectralCompressor(responseCurve),
-      parameters(*this, nullptr, "PLG", Parameters::createParameterLayout())
+      parameters(*this, nullptr, "SpectrixParams", Parameters::createParameterLayout())
 
 {
     Parameters::addListeners(parameters, this);
+    for(auto *param : parameters.processor.getParameters()) {
+        if(auto *rangedParam = dynamic_cast<RangedAudioParameter *>(param)) {
+            parameterChanged(rangedParam->getParameterID(), rangedParam->getValue());
+        }
+    }
 }
 
 SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
@@ -19,6 +25,7 @@ SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
 //==============================================================================
 void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     spectralCompressor.prepareToPlay(sampleRate);
+    spectralVisualizer.prepareToPlay(sampleRate);
     setLatencySamples(2 * Parameters::FFT_SIZE - 2);
 
     if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor())) {
@@ -111,7 +118,14 @@ void SpectrixAudioProcessor::parameterChanged(const String &paramID, float newVa
     }
 
     if(paramID == Parameters::compressorModeID) {
-        spectralCompressor.setCompressorMode(newValue);
+        int compressorTypeIndex = static_cast<int>(newValue);
+        switch(compressorTypeIndex) {
+        case 0: spectralCompressor.setCompressorMode(COMPRESSOR); break;
+        case 1: spectralCompressor.setCompressorMode(EXPANDER); break;
+        case 2: spectralCompressor.setCompressorMode(CLIPPER); break;
+        case 3: spectralCompressor.setCompressorMode(GATE); break;
+        default: spectralCompressor.setCompressorMode(COMPRESSOR);
+        }
     }
 
     if(paramID == Parameters::inputGainID) {
