@@ -1,7 +1,6 @@
 #pragma once
 #include "FFTProcessor.h"
 #include "GaussianResponseCurve.h"
-#include "PluginParameters.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include <JuceHeader.h>
 #include <array>

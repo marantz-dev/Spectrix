@@ -1,6 +1,5 @@
 #pragma once
 #include "FFTProcessor.h"
-#include "GaussianResponseCurve.h"
 #include <JuceHeader.h>
 #include <array>
 #include <cstddef>

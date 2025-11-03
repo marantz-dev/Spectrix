@@ -1,5 +1,4 @@
 #pragma once
-#include "FFTProcessor.h"
 #include "SpectralCompressor.h"
 #include <JuceHeader.h>
 #include "PluginParameters.h"

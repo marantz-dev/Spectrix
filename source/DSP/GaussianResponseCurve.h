@@ -4,7 +4,6 @@
 #include <JuceHeader.h>
 #include <cstddef>
 #include <vector>
-
 struct GaussianPeak {
     float frequency;
     float gainDB;

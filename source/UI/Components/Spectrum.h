@@ -16,7 +16,6 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     }
 
     void paint(juce::Graphics &g) override {
-        // g.fillAll(juce::Colours::black);
 
         const auto &newMagnitudes = processor.getProcessedMagnitudes();
         if(newMagnitudes.empty())
