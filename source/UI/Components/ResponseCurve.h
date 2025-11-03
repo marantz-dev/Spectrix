@@ -116,7 +116,7 @@ class ResponseCurve : public juce::Component {
         int labelWidth = 80;
         int labelHeight = 18;
 
-        float x = peakX - labelWidth / 2;
+        float x = peakX - labelWidth / 2.0f;
         float y = peakY - 40;
 
         x = juce::jlimit(bounds.getX(), bounds.getRight() - labelWidth, x);
