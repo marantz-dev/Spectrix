@@ -104,7 +104,7 @@ class ResponseCurve : public juce::Component {
              = juce::jlimit(bounds.getX(), bounds.getRight(), event.position.x - dragOffset.x);
             float newY
              = juce::jlimit(bounds.getY(), bounds.getBottom(), event.position.y - dragOffset.y);
-            peak.frequency = std::pow(10.0, xToLogFrequency(newX));
+             peak.frequency = std::pow(10.0, xToLogFrequency(newX));
             peak.gainDB = inverseDBWarp(newY, bounds) - responseCurveShiftDB;
         }
 
