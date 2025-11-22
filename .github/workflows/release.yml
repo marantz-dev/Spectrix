@@ -1,6 +1,7 @@
 name: Release — build Spectrix VST3 (macOS & Windows) and publish
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*" # trigger on semver tags like v1.2.3
