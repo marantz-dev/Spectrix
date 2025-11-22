@@ -1,10 +1,12 @@
+ url=https://github.com/marantz-dev/Spectrix/blob/main/.github/workflows/ci.yml
 name: CI — build Spectrix VST3 (macOS & Windows)
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
+  workflow_dispatch:   # lets you run this manually from the Actions page
 
 jobs:
   build:
@@ -36,50 +38,51 @@ jobs:
         run: |
           cmake --build build --config Release --parallel
 
-      - name: Debug show build tree (helps find outputs)
+      - name: Debug: show build tree (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          echo "===== build tree (Windows) ====="
+          echo "===== build tree ====="
           ls -la build || true
-          find build -maxdepth 5 -type f -name 'Spectrix*' -print || true
+          # show deeper contents so we can find Spectrix.dll/.vst3
+          find build -maxdepth 6 -iname 'Spectrix*' -print || true
           echo "===== end build tree ====="
 
-      - name: Collect macOS Spectrix.vst3
-        if: matrix.os == 'macos-latest'
-        run: |
-          mkdir -p build/packaged
-          # Copy Spectrix.vst3 bundle if it exists
-          find build -type d -name 'Spectrix.vst3' -exec cp -R '{}' build/packaged/ \; || true
-          # Fallback common Release path
-          cp -R build/Release/Spectrix.vst3 build/packaged/ 2>/dev/null || true
-          if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
-            echo "Warning: Spectrix.vst3 not found. Check build output path."
-          fi
-          (cd build/packaged && zip -r ../spectrix-macos-vst3.zip .) || true
-
-      - name: Collect Windows Spectrix.dll (robust)
+      - name: Zip entire build folder (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          mkdir -p build/packaged
-          # 1) Try to find Spectrix.dll anywhere under build
-          find build -type f -iname 'Spectrix.dll' -exec cp '{}' build/packaged/ \; || true
-          # 2) Also check for a Spectrix.vst3 folder (some setups produce a .vst3 bundle)
-          find build -type d -iname 'Spectrix.vst3' -exec cp -R '{}' build/packaged/ \; || true
-          # 3) Fallback to common Release output path(s)
-          cp build/Release/Spectrix.dll build/packaged/ 2>/dev/null || true
-          cp -R build/Release/Spectrix.vst3 build/packaged/ 2>/dev/null || true
-          # List packaged contents for debugging
-          echo "Packaged contents:"
-          ls -la build/packaged || true
-          if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
-            echo "Warning: no Spectrix output found. Check CMake target name and generator."
+          # create a zip of the entire build directory so you can download and inspect it locally
+          set -e
+          if [ -d build ]; then
+            rm -f build-windows-full.zip || true
+            zip -r build-windows-full.zip build || true
+          else
+            echo "No build folder found to zip."
           fi
-          (cd build/packaged && zip -r ../spectrix-windows.zip .) || true
 
-      - name: Upload build artifact
+      - name: Zip entire build folder (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          if [ -d build ]; then
+            rm -f build-macos-full.zip || true
+            zip -r build-macos-full.zip build || true
+          else
+            echo "No build folder found to zip."
+          fi
+
+      - name: Pack specific plugin artifacts (optional)
+        run: |
+          mkdir -p build/packaged
+          # try to pick the Spectrix outputs; these are additional convenience zips
+          find build -type d -iname 'Spectrix.vst3' -exec cp -R '{}' build/packaged/ \; || true
+          find build -type f -iname 'Spectrix.dll' -exec cp '{}' build/packaged/ \; || true
+          (cd build/packaged && zip -r ../spectrix-outputs.zip .) || true
+
+      - name: Upload build artifact(s)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os == 'macos-latest' && 'spectrix-macos-vst3' || 'spectrix-windows' }}
+          # upload the platform full build zips if present, and also the focused plugin zip
+          name: build-artifacts-${{ matrix.os }}
           path: |
-            build/spectrix-macos-vst3.zip
-            build/spectrix-windows.zip
+            build-windows-full.zip
+            build-macos-full.zip
+            build/spectrix-outputs.zip
