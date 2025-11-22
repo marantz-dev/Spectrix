@@ -1,51 +1,72 @@
-name: CI — build VST3 (macOS & Windows)
+name: CI — build Spectrix VST3 (macOS & Windows)
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
-  build-vst3:
-    name: Build VST3 on ${{ matrix.os }}
+  build:
+    name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
 
+    # Run run: steps under bash on all runners so the same unix commands work on Windows
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare build directory
+      - name: Show runner info
         run: |
+          uname -a || ver
           cmake --version || true
-          mkdir -p build
 
       - name: Configure (CMake)
         run: |
+          mkdir -p build
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: |
           cmake --build build --config Release --parallel
 
-      - name: Collect VST3 files and zip
+      - name: Collect macOS Spectrix.vst3
+        if: matrix.os == 'macos-latest'
         run: |
           mkdir -p build/packaged
-          # Copy any .vst3 outputs found under build into packaged preserving subpaths
-          find build f -name '*.vst3' -exec bash -lc 'mkdir -p "$(dirname "build/packaged/{}")"; cp --parents "{}" build/packaged/ || true' \; || true
-          # Fallback: if anything ended up directly in build/Release, try that too
-          cp -R build/Release/*.vst3 build/packaged/ 2>/dev/null || true
+          # Try to copy any Spectrix.vst3 bundle found under build
+          find build -type d -name 'Spectrix.vst3' -exec cp -R '{}' build/packaged/ \; || true
+          # Fallback: common output path
+          cp -R build/Release/Spectrix.vst3 build/packaged/ 2>/dev/null || true
           if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
-            echo "Warning: no .vst3 built (adjust your build targets or globs)."
+            echo "Warning: Spectrix.vst3 not found. Check your build target name/output path."
           fi
-          (cd build/packaged && zip -r ../spectrix-vst3-${{ matrix.os }}.zip .) || true
+          (cd build/packaged && zip -r ../spectrix-macos-vst3.zip .) || true
+
+      - name: Collect Windows Spectrix.dll
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir -p build/packaged
+          # Try to copy Spectrix.dll built anywhere under build
+          find build -type f -name 'Spectrix.dll' -exec cp '{}' build/packaged/ \; || true
+          # Fallback: common Release path
+          cp build/Release/Spectrix.dll build/packaged/ 2>/dev/null || true
+          if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
+            echo "Warning: Spectrix.dll not found. Check your build target name/output path and Visual Studio generator."
+          fi
+          (cd build/packaged && zip -r ../spectrix-windows-dll.zip .) || true
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: spectrix-vst3-${{ matrix.os }}
-          path: build/spectrix-vst3-${{ matrix.os }}.zip
+          name: ${{ matrix.os == 'macos-latest' && 'spectrix-macos-vst3' || 'spectrix-windows-dll' }}
+          path: |
+            build/spectrix-macos-vst3.zip
+            build/spectrix-windows-dll.zip
