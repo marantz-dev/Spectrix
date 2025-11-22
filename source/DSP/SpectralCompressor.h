@@ -84,6 +84,8 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         float magnitude, phase;
         extractMagnitudeAndPhase(buffer, bin, magnitude, phase);
         const float magnitudeDB = magnitudeToDecibels(magnitude);
+        // gaussianPeaks) != prevGaussianPeaks)
+        // const float thresholdDB = currentResponseCurve[i];
         const float thresholdDB = calculateGaussianSum(frequency, gaussianPeaks);
         const float gainReductionDB = calculateCompression(magnitudeDB, thresholdDB, bin);
         gainReductionArray[bin] = gainReductionDB;

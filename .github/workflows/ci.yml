@@ -1,0 +1,51 @@
+name: CI — Build Spectrix VST3 (macOS & Windows)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # Se uno fallisce, lascia che l'altro finisca
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # 1. Checkout con Submodules (FONDAMENTALE per JUCE)
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # 2. Configurazione CMake
+      - name: Configure CMake
+        run: |
+          # Disattiva extra e esempi per velocizzare il build
+          cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DJUCE_BUILD_EXTRAS=OFF \
+            -DJUCE_BUILD_EXAMPLES=OFF
+
+      # 3. Compilazione effettiva
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      # 4. Ricerca e Packaging intelligente
+      - name: Package VST3
+        run: |
+          mkdir -p dist
+          find build -name "Spectrix.vst3" -type d -exec cp -R {} dist/ \;
+          cd dist
+          cmake -E tar cfv ../spectrix-vst3-${{ matrix.os }}.zip --format=zip Spectrix.vst3
+      # 5. Upload dello Zip
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Spectrix-VST3-${{ matrix.os }}
+          path: spectrix-vst3-${{ matrix.os }}.zip

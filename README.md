@@ -1,5 +1,7 @@
 # Spectrix – Spectral Compressor
 
+![screenshot](Spectrix.png)
+
 **Spectrix** is an experimental spectral dynamics processor built with [JUCE](https://juce.com/).  
 It applies dynamic range compression across the frequency spectrum for more precise control than traditional broadband compressors.
 

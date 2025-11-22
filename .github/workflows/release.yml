@@ -1,0 +1,91 @@
+name: Release — build Spectrix VST3 (macOS & Windows) and publish
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*" # trigger on semver tags like v1.2.3
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: |
+          mkdir -p build
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Collect macOS Spectrix.vst3
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p build/packaged
+          find build -type d -name 'Spectrix.vst3' -exec cp -R '{}' build/packaged/ \; || true
+          cp -R build/Release/Spectrix.vst3 build/packaged/ 2>/dev/null || true
+          if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
+            echo "Warning: Spectrix.vst3 not found. Edit workflow to match your output path."
+          fi
+          (cd build/packaged && zip -r ../spectrix-macos-vst3.zip .) || true
+
+      - name: Collect Windows Spectrix.dll
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir -p build/packaged
+          find build -type f -name 'Spectrix.dll' -exec cp '{}' build/packaged/ \; || true
+          cp build/Release/Spectrix.dll build/packaged/ 2>/dev/null || true
+          if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
+            echo "Warning: Spectrix.dll not found. Edit workflow to match your output path or generator."
+          fi
+          (cd build/packaged && zip -r ../spectrix-windows-dll.zip .) || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os == 'macos-latest' && 'spectrix-macos-vst3' || 'spectrix-windows-dll' }}
+          path: |
+            build/spectrix-macos-vst3.zip
+            build/spectrix-windows-dll.zip
+
+  publish:
+    name: Create GitHub Release and attach zips
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: spectrix-macos-vst3
+          path: artifacts/macos || true
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: spectrix-windows-dll
+          path: artifacts/windows || true
+
+      - name: Create GitHub Release and attach zips
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: Release ${{ github.ref_name }} — Spectrix VST3 (macOS) and DLL (Windows) — unsigned
+          artifacts: |
+            artifacts/macos/spectrix-macos-vst3.zip
+            artifacts/windows/spectrix-windows-dll.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
