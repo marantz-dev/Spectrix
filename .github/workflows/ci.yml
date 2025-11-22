@@ -1,0 +1,50 @@
+name: CI — build VST3 (macOS & Windows)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-vst3:
+    name: Build VST3 on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare build directory
+        run: |
+          cmake --version || true
+          mkdir -p build
+
+      - name: Configure (CMake)
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Collect VST3 files and zip
+        run: |
+          mkdir -p build/packaged
+          # Copy any .vst3 outputs found under build into packaged preserving subpaths
+          find build -type f -name '*.vst3' -exec bash -lc 'mkdir -p "$(dirname "build/packaged/{}")"; cp --parents "{}" build/packaged/ || true' \; || true
+          # Fallback: if anything ended up directly in build/Release, try that too
+          cp -R build/Release/*.vst3 build/packaged/ 2>/dev/null || true
+          if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
+            echo "Warning: no .vst3 built (adjust your build targets or globs)."
+          fi
+          (cd build/packaged && zip -r ../spectrix-vst3-${{ matrix.os }}.zip .) || true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spectrix-vst3-${{ matrix.os }}
+          path: build/spectrix-vst3-${{ matrix.os }}.zip

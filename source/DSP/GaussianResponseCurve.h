@@ -3,6 +3,7 @@
 #include "PluginParameters.h"
 #include <JuceHeader.h>
 #include <cstddef>
+#include <cstdlib>
 #include <vector>
 
 struct GaussianPeak {

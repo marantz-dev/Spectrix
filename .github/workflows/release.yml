@@ -1,0 +1,72 @@
+name: Release — build VST3 for macOS & Windows and publish
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # trigger on SemVer tags like v1.2.3
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: |
+          mkdir -p build
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Collect VST3 and zip
+        run: |
+          mkdir -p build/packaged
+          find build -type f -name '*.vst3' -exec bash -lc 'mkdir -p "$(dirname "build/packaged/{}")"; cp --parents "{}" build/packaged/ || true' \; || true
+          cp -R build/Release/*.vst3 build/packaged/ 2>/dev/null || true
+          if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
+            echo "Warning: no .vst3 found — check your build output paths."
+          fi
+          (cd build/packaged && zip -r ../spectrix-vst3-${{ matrix.os }}.zip .) || true
+
+      - name: Upload artifact for release
+        uses: actions/upload-artifact@v4
+        with:
+          name: spectrix-vst3-${{ matrix.os }}
+          path: build/spectrix-vst3-${{ matrix.os }}.zip
+
+  publish:
+    name: Create GitHub Release with artifacts
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: spectrix-vst3-macos-latest
+          path: artifacts/macos || true
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: spectrix-vst3-windows-latest
+          path: artifacts/windows || true
+
+      - name: Create GitHub Release and attach zips
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: Release ${{ github.ref_name }} — VST3 artifacts (unsigned)
+          artifacts: |
+            artifacts/macos/spectrix-vst3-macos-latest.zip
+            artifacts/windows/spectrix-vst3-windows-latest.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
