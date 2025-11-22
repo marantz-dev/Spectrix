@@ -36,7 +36,7 @@ jobs:
         run: |
           mkdir -p build/packaged
           # Copy any .vst3 outputs found under build into packaged preserving subpaths
-          find build -type f -name '*.vst3' -exec bash -lc 'mkdir -p "$(dirname "build/packaged/{}")"; cp --parents "{}" build/packaged/ || true' \; || true
+          find build f -name '*.vst3' -exec bash -lc 'mkdir -p "$(dirname "build/packaged/{}")"; cp --parents "{}" build/packaged/ || true' \; || true
           # Fallback: if anything ended up directly in build/Release, try that too
           cp -R build/Release/*.vst3 build/packaged/ 2>/dev/null || true
           if [ -z "$(ls -A build/packaged 2>/dev/null)" ]; then
