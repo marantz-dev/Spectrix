@@ -2,9 +2,9 @@ name: CI — build Spectrix VST3 (macOS & Windows)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
         run: |
           cmake --build build --config Release --parallel
 
-      - name: Debug: show build tree (helps find outputs)
+      - name: Debug show build tree (helps find outputs)
         if: matrix.os == 'windows-latest'
         run: |
           echo "===== build tree (Windows) ====="
