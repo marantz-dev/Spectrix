@@ -1,6 +1,7 @@
 name: Release — build VST3 for macOS & Windows and publish
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*" # trigger on SemVer tags like v1.2.3
