@@ -2,11 +2,11 @@
 name: CI — build Spectrix VST3 (macOS & Windows)
 
 on:
+  workflow_dispatch:   # lets you run this manually from the Actions page
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:   # lets you run this manually from the Actions page
 
 jobs:
   build:
