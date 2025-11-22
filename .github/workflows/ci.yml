@@ -1,4 +1,3 @@
- url=https://github.com/marantz-dev/Spectrix/blob/main/.github/workflows/ci.yml
 name: CI — build Spectrix VST3 (macOS & Windows)
 
 on:
