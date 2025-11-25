@@ -12,11 +12,11 @@ include(cmake/cpm.cmake)
 cpmaddpackage(
   NAME JUCE
 
-  GIT_TAG 8.0.6
-  VERSION 8.0.6
-  GITHUB_REPOSITORY juce-framework/JUCE
+  # GIT_TAG 8.0.6
+  # VERSION 8.0.6
+  # GITHUB_REPOSITORY juce-framework/JUCE
 
-  # SOURCE_DIR /Applications/JUCE/
+  SOURCE_DIR /Applications/JUCE/
 )
 # Add compiler warning utilities
 # include(cmake/CompilerWarnings.cmake)

@@ -5,6 +5,7 @@
 #include "Metering.h"
 #include "PluginProcessor.h"
 #include "Spectrum.h"
+#include "BinaryData.h"
 #include "SpectrumSection.h"
 #include "juce_audio_processors/juce_audio_processors.h"
 #include "juce_graphics/juce_graphics.h"
@@ -25,11 +26,18 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
     gainControlSection.setLookAndFeel(&theme);
     compressionModeSection.setLookAndFeel(&theme);
 
+    // pluginTitleImage = juce::ImageFileFormat::loadFrom(juce::File("../Spectrix.png"));
     pluginTitleImage
-     = juce::ImageFileFormat::loadFrom(juce::File("/Users/riccardomarantonio/Desktop/LOGO.png"));
+     = juce::ImageCache::getFromMemory(BinaryData::logo_png, BinaryData::logo_pngSize);
 
-    setSize(1422, 800);
-    // setResizable(true, true);
+    setResizable(true, true);
+
+    double ratio = 16.0 / 9.0;
+    int minW = 1000;
+    int maxW = 3000;
+    setResizeLimits(minW, minW / ratio, maxW, maxW / ratio);
+    getConstrainer()->setFixedAspectRatio(ratio);
+    setSize(1422, 1422 / ratio);
 }
 
 void SpectrixAudioProcessorEditor::prepareToPlay(double sr, int sb) {

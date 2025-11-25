@@ -16,6 +16,11 @@ juce_add_plugin(
 
 juce_generate_juce_header(Spectrix)
 
+juce_add_binary_data(BinaryData
+    SOURCES
+        logo.png
+)
+
 # Automatically add all source and header files
 file(GLOB_RECURSE SOURCES "*.cpp" "*.c")
 file(GLOB_RECURSE HEADERS "*.h" "*.hpp")
@@ -32,6 +37,7 @@ target_compile_definitions(Spectrix
 # Link JUCE modules
 target_link_libraries(Spectrix
     PRIVATE
+        BinaryData
         juce::juce_audio_utils
         juce::juce_dsp
     PUBLIC

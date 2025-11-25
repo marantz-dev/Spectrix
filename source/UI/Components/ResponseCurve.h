@@ -95,7 +95,7 @@ class ResponseCurve : public juce::Component {
         if(event.mods.isShiftDown()) {
             float deltaY = event.position.y - mouseDownPos.y;
             float sigmaChange = -deltaY / bounds.getHeight();
-            peak.sigmaNorm = juce::jlimit(0.001, 2.0, (double)initialSigma + sigmaChange);
+            peak.sigmaNorm = juce::jlimit(0.025, 2.0, (double)initialSigma + sigmaChange);
             float logFreq
              = xToLogFrequency(juce::jlimit(bounds.getX(), bounds.getRight(), event.position.x));
             peak.frequency = std::pow(10.0, juce::jlimit(logMin, logMax, (double)logFreq));
@@ -104,7 +104,7 @@ class ResponseCurve : public juce::Component {
              = juce::jlimit(bounds.getX(), bounds.getRight(), event.position.x - dragOffset.x);
             float newY
              = juce::jlimit(bounds.getY(), bounds.getBottom(), event.position.y - dragOffset.y);
-             peak.frequency = std::pow(10.0, xToLogFrequency(newX));
+            peak.frequency = std::pow(10.0, xToLogFrequency(newX));
             peak.gainDB = inverseDBWarp(newY, bounds) - responseCurveShiftDB;
         }
 

@@ -55,6 +55,24 @@ class SpectrumGrid : public juce::Component {
                 g.drawVerticalLine(juce::roundToInt(x), bounds.getY(), bounds.getBottom());
             }
         }
+        {
+            auto bounds = getLocalBounds().toFloat();
+
+            float fadeHeight = 40.0f; // adjust to taste
+
+            juce::ColourGradient fadeGrad(
+             juce::Colour(21, 9, 37).withAlpha(1.0f), // fully transparent at very top
+
+             bounds.getX(), bounds.getY(),
+
+             juce::Colour(21, 9, 37).withAlpha(0.0f), // fully transparent at very top
+             bounds.getX(), bounds.getY() + fadeHeight,
+
+             false);
+
+            g.setGradientFill(fadeGrad);
+            g.fillRect(bounds.withHeight(fadeHeight));
+        }
     }
 
   private:
