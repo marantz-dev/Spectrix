@@ -1,8 +1,9 @@
 name: CI — Build Spectrix VST3 (macOS & Windows)
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [master]
 
 jobs:
   build:
