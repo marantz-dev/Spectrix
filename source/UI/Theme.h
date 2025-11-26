@@ -1,80 +1,122 @@
-
 #pragma once
 #include "juce_graphics/juce_graphics.h"
 #include <JuceHeader.h>
 
 class Theme : public juce::LookAndFeel_V4 {
   public:
+    Theme() {
+        // defined colors to match the screenshot vibe
+        setColour(juce::Slider::textBoxTextColourId, juce::Colours::grey);
+        setColour(juce::Label::textColourId, juce::Colour(0xffe1e1e1)); // Brighter for the Name
+    }
+
+    // ###################
+    // #                 #
+    // #  ROTARY SLIDER  #
+    // #                 #
+    // ###################
+
     void
     drawRotarySlider(juce::Graphics &g, int x, int y, int width, int height, float sliderPos,
                      float rotaryStartAngle, float rotaryEndAngle, juce::Slider &slider) override {
-        auto bounds = juce::Rectangle<float>(x, y, width, height);
+        // 1. Setup Geometry
+        auto bounds = juce::Rectangle<float>(x, y, width, height).reduced(10.0f);
+        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f;
+        auto toAngle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
         auto centre = bounds.getCentre();
-        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f - 8.0f;
 
-        auto knobColor = juce::Colour(0xffe8e8e8);
-        auto knobShadow = juce::Colour(0xffc0c0c0);
-        auto knobHighlight = juce::Colour(0xfff5f5f5);
-        auto markColor = juce::Colours::grey.brighter();
-        auto pointerColor = juce::Colour(0xff888888);
+        // 2. Define Colors
+        // Track Background (Dark)
+        auto trackColor = juce::Colour(0xff1d2328).brighter(0.1f);
+        // Knob Face
+        auto knobColor = juce::Colour(0xff15181d);
 
-        // ########## TICKMARKS ##########
+        // --- GRADIENT DEFINITION FOR ACTIVE ARC ---
+        // Start Color (Top of knob - Bright Cyan)
+        auto gradientTop = juce::Colour(0xff66fcf1);
+        // End Color (Bottom of knob - Deep Electric Blue)
+        auto gradientBottom = juce::Colour(0xff2d79eb);
 
-        auto tickRadius = radius - 3.0f;
-        auto numTicks = 11;
-        for(int i = 0; i < numTicks; ++i) {
-            auto tickAngle
-             = rotaryStartAngle + (float)i / (numTicks - 1) * (rotaryEndAngle - rotaryStartAngle);
-            auto tickLength = (i % 2 == 0) ? 6.0f : 3.0f;
-            auto tickThickness = (i % 2 == 0) ? 1.2f : 0.8f;
+        // 3. Draw Background Track (The "Empty" part)
+        auto lineW = 3.5f;
+        auto arcRadius = radius - lineW * 0.5f;
 
-            auto innerX = centre.x
-                          + std::cos(tickAngle - juce::MathConstants<float>::halfPi)
-                             * (tickRadius - tickLength);
-            auto innerY = centre.y
-                          + std::sin(tickAngle - juce::MathConstants<float>::halfPi)
-                             * (tickRadius - tickLength);
-            auto outerX
-             = centre.x + std::cos(tickAngle - juce::MathConstants<float>::halfPi) * tickRadius;
-            auto outerY
-             = centre.y + std::sin(tickAngle - juce::MathConstants<float>::halfPi) * tickRadius;
+        juce::Path backgroundArc;
+        backgroundArc.addCentredArc(centre.x, centre.y, arcRadius, arcRadius, 0.0f,
+                                    rotaryStartAngle, rotaryEndAngle, true);
 
-            g.setColour(markColor.withAlpha(0.4f));
-            g.drawLine(innerX, innerY, outerX, outerY, tickThickness);
+        g.setColour(trackColor);
+        g.strokePath(backgroundArc, juce::PathStrokeType(lineW, juce::PathStrokeType::curved,
+                                                         juce::PathStrokeType::rounded));
+
+        // 4. Draw Active Track (The "Value" part) with GRADIENT
+        if(slider.isEnabled()) {
+            juce::Path valueArc;
+            valueArc.addCentredArc(centre.x, centre.y, arcRadius, arcRadius, 0.0f, rotaryStartAngle,
+                                   toAngle, true);
+
+            // Create a vertical gradient spanning the height of the knob
+            juce::ColourGradient activeGradient(
+             gradientTop, centre.x, centre.y - radius,    // Start at Top
+             gradientBottom, centre.x, centre.y + radius, // End at Bottom
+             false                                        // Not radial
+            );
+
+            g.setGradientFill(activeGradient);
+            g.strokePath(valueArc, juce::PathStrokeType(lineW, juce::PathStrokeType::curved,
+                                                        juce::PathStrokeType::rounded));
         }
 
-        // ########## MAIN KNOB ##########
+        // 5. Draw Knob Face
+        auto knobRadius = radius - 8.0f;
 
-        auto knobRadius = radius - 15.0f;
-        juce::ColourGradient knobGradient(
-         knobHighlight, centre.x - knobRadius * 0.4f, centre.y - knobRadius * 0.4f,
-         knobColor.darker(0.1f), centre.x + knobRadius * 0.6f, centre.y + knobRadius * 0.6f, true);
-        g.setGradientFill(knobGradient);
+        g.setColour(knobColor);
         g.fillEllipse(centre.x - knobRadius, centre.y - knobRadius, knobRadius * 2.0f,
                       knobRadius * 2.0f);
 
-        g.setColour(knobShadow.withAlpha(0.3f));
+        // Subtle edge
+        g.setColour(juce::Colours::black.withAlpha(0.5f));
         g.drawEllipse(centre.x - knobRadius, centre.y - knobRadius, knobRadius * 2.0f,
                       knobRadius * 2.0f, 1.0f);
 
-        // ########## POINTER ##########
+        // 6. Draw Indicator Dot
+        // We keep the dot the bright cyan color so it pops against the gradient
+        float dotDist = knobRadius * 0.75f;
+        juce::Point<float> thumbPoint(
+         centre.x + dotDist * std::cos(toAngle - juce::MathConstants<float>::halfPi),
+         centre.y + dotDist * std::sin(toAngle - juce::MathConstants<float>::halfPi));
 
-        auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
-        auto pointerLength = knobRadius * 0.95f;
-        auto pointerThickness = 2.5f;
+        float dotSize = 4.0f;
+        g.setColour(gradientTop); // Use the bright active color
+        g.fillEllipse(juce::Rectangle<float>(dotSize, dotSize).withCentre(thumbPoint));
 
-        auto pointerX
-         = centre.x + std::cos(angle - juce::MathConstants<float>::halfPi) * pointerLength;
-        auto pointerY
-         = centre.y + std::sin(angle - juce::MathConstants<float>::halfPi) * pointerLength;
+        // Dot Glow
+        g.setColour(gradientTop.withAlpha(0.4f));
+        g.fillEllipse(
+         juce::Rectangle<float>(dotSize * 2.5f, dotSize * 2.5f).withCentre(thumbPoint));
+    }
 
-        g.setColour(pointerColor);
-        g.drawLine(centre.x, centre.y, pointerX, pointerY, pointerThickness);
+    // ###################
+    // #                 #
+    // #   TEXT STYLING  #
+    // #                 #
+    // ###################
 
-        auto centerDotRadius = 1.5f;
-        g.setColour(pointerColor.withAlpha(0.6f));
-        g.fillEllipse(centre.x - centerDotRadius, centre.y - centerDotRadius,
-                      centerDotRadius * 2.0f, centerDotRadius * 2.0f);
+    // 1. Font for the Slider Value (e.g. "10.0 ms")
+    juce::Font getLabelFont(juce::Label &label) override {
+        return juce::Font("Roboto", 13.0f, juce::Font::plain); // Clean, sans-serif
+    }
+
+    // 2. Custom Text Box (Transparent, no borders)
+    juce::Label *createSliderTextBox(juce::Slider &slider) override {
+        auto *l = LookAndFeel_V4::createSliderTextBox(slider);
+
+        // Remove the default white background and outline
+        l->setColour(juce::Label::outlineColourId, juce::Colours::transparentBlack);
+        l->setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+        l->setColour(juce::Label::textColourId, juce::Colours::grey);
+
+        return l;
     }
 
     // ###################
@@ -83,72 +125,115 @@ class Theme : public juce::LookAndFeel_V4 {
     // #                 #
     // ###################
 
+    // Inside Theme.h
+
     void
     drawToggleButton(juce::Graphics &g, juce::ToggleButton &button,
                      bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override {
-        auto bounds = button.getLocalBounds().toFloat().reduced(1.0f);
-        auto isToggleOn = button.getToggleState();
-        auto isButtonDown = shouldDrawButtonAsDown;
-        auto isHovered = shouldDrawButtonAsHighlighted;
-        auto isEnabled = button.isEnabled();
+        auto bounds = button.getLocalBounds().toFloat();
+        auto isOn = button.getToggleState();
+        auto isHover = shouldDrawButtonAsHighlighted;
 
-        // Synthwave color palette
-        auto bgColor = juce::Colour(0xff1a0a2e);      // deep purple
-        auto onColor = juce::Colour(0xffff3d81);      // neon pink
-        auto offColor = juce::Colour(0xff2d1b4e);     // dark purple
-        auto hoverColor = juce::Colour(0xff3d2b5e);   // lighter purple
-        auto textOffColor = juce::Colour(0xffb794f6); // soft purple
-        auto textOnColor = juce::Colour(0xffffffff);  // white
-        auto glowColor = juce::Colour(0xffff0080);    // bright neon pink
+        // 1. Colors & Style
+        auto activeColor = juce::Colour(0xff66fcf1);   // Cyan
+        auto inactiveColor = juce::Colour(0xff35384a); // Dark Grey
+        auto textColor = isOn ? juce::Colours::white : juce::Colours::grey;
+        auto mainColor = isOn ? activeColor : inactiveColor;
 
-        // Determine button fill color
-        juce::Colour buttonColor;
-        if(isToggleOn)
-            buttonColor = isButtonDown ? onColor.darker(0.2f) : onColor;
-        else
-            buttonColor
-             = isButtonDown ? offColor.darker(0.15f) : (isHovered ? hoverColor : offColor);
+        // 2. Layout Calculation
+        auto h = bounds.getHeight();
 
-        if(!isEnabled) {
-            buttonColor = buttonColor.withAlpha(0.4f);
-            textOffColor = textOffColor.withAlpha(0.4f);
-            textOnColor = textOnColor.withAlpha(0.4f);
-        }
+        // A. Indicator Box (Left)
+        auto boxSize = juce::jmin(h * 0.6f, 16.0f);
+        auto boxBounds = juce::Rectangle<float>(boxSize, boxSize)
+                          .withCentre({bounds.getX() + 15.0f, bounds.getCentreY()});
 
-        auto cornerRadius = 6.0f;
+        // B. Symbol Area (Middle)
+        auto iconWidth = 20.0f;
+        auto iconBounds
+         = juce::Rectangle<float>(boxBounds.getRight() + 8.0f, bounds.getY(), iconWidth, h);
 
-        // Neon glow layers
-        if(isToggleOn && isEnabled) {
-            for(int i = 3; i > 0; --i) {
-                g.setColour(glowColor.withAlpha(0.1f * i));
-                g.fillRoundedRectangle(bounds.expanded(float(i) * 2.0f), cornerRadius + i);
-            }
-        }
+        // C. Text Area (Right)
+        auto textBounds
+         = juce::Rectangle<float>(iconBounds.getRight() + 5.0f, bounds.getY(),
+                                  bounds.getWidth() - iconBounds.getRight() - 5.0f, h);
 
-        // Main button fill with subtle gradient
-        juce::ColourGradient gradient(buttonColor.brighter(0.1f), bounds.getX(), bounds.getY(),
-                                      buttonColor.darker(0.2f), bounds.getX(), bounds.getBottom(),
-                                      false);
-        g.setGradientFill(gradient);
-        g.fillRoundedRectangle(bounds, cornerRadius);
+        // 3. Draw Indicator Box (Glowy style)
+        g.setColour(juce::Colours::black.withAlpha(0.3f));
+        g.fillRoundedRectangle(boxBounds.translated(0, 1), 3.0f); // Shadow
 
-        // Neon border
-        if(isToggleOn) {
-            g.setColour(glowColor.brighter(0.2f));
-            g.drawRoundedRectangle(bounds, cornerRadius, 2.0f);
+        if(isOn) {
+            // Glow
+            g.setColour(activeColor.withAlpha(0.4f));
+            g.fillRoundedRectangle(boxBounds.expanded(3.0f), 4.0f);
+
+            // Lit Gradient
+            juce::ColourGradient litGrad(activeColor.brighter(0.2f), boxBounds.getTopLeft(),
+                                         activeColor.darker(0.1f), boxBounds.getBottomLeft(),
+                                         false);
+            g.setGradientFill(litGrad);
         } else {
-            g.setColour(juce::Colour(0xff00d9ff).withAlpha(isHovered ? 0.6f : 0.3f));
-            g.drawRoundedRectangle(bounds, cornerRadius, 1.5f);
+            // Unlit Gradient
+            juce::ColourGradient unlitGrad(inactiveColor.darker(0.2f), boxBounds.getTopLeft(),
+                                           inactiveColor, boxBounds.getBottomLeft(), false);
+            g.setGradientFill(unlitGrad);
+        }
+        g.fillRoundedRectangle(boxBounds, 2.0f);
+
+        // Border
+        g.setColour(isOn ? activeColor.brighter(0.4f) : juce::Colours::black.withAlpha(0.6f));
+        g.drawRoundedRectangle(boxBounds, 2.0f, 1.0f);
+
+        // 4. Draw Symbol based on Text
+        g.setColour(isOn ? activeColor : juce::Colours::grey);
+
+        juce::Path iconPath;
+        auto iconCenter = iconBounds.getCentre();
+        auto s = 6.0f; // Scale for icons
+
+        juce::String text = button.getButtonText();
+
+        if(text.containsIgnoreCase("Compressor")) {
+            // curve going flat
+            iconPath.startNewSubPath(iconCenter.x - s, iconCenter.y + s);
+            iconPath.lineTo(iconCenter.x, iconCenter.y);
+            iconPath.lineTo(iconCenter.x + s, iconCenter.y);
+        } else if(text.containsIgnoreCase("Expander")) {
+            // Arrows pointing out
+            iconPath.startNewSubPath(iconCenter.x - s, iconCenter.y);
+            iconPath.lineTo(iconCenter.x - 3, iconCenter.y - 3);
+            iconPath.startNewSubPath(iconCenter.x - s, iconCenter.y);
+            iconPath.lineTo(iconCenter.x - 3, iconCenter.y + 3);
+
+            iconPath.startNewSubPath(iconCenter.x + s, iconCenter.y);
+            iconPath.lineTo(iconCenter.x + 3, iconCenter.y - 3);
+            iconPath.startNewSubPath(iconCenter.x + s, iconCenter.y);
+            iconPath.lineTo(iconCenter.x + 3, iconCenter.y + 3);
+        } else if(text.containsIgnoreCase("Clipper")) {
+            // Square wave / Flat top
+            iconPath.startNewSubPath(iconCenter.x - s, iconCenter.y + s);
+            iconPath.lineTo(iconCenter.x - s / 2, iconCenter.y - s / 2);
+            iconPath.lineTo(iconCenter.x + s / 2, iconCenter.y - s / 2); // The clip
+            iconPath.lineTo(iconCenter.x + s, iconCenter.y + s);
+        } else if(text.containsIgnoreCase("Gate")) {
+            // Gate symbol (vertical line stopping signal)
+            iconPath.startNewSubPath(iconCenter.x - s, iconCenter.y);
+            iconPath.lineTo(iconCenter.x, iconCenter.y);
+            iconPath.startNewSubPath(iconCenter.x, iconCenter.y - s);
+            iconPath.lineTo(iconCenter.x, iconCenter.y + s);
         }
 
-        // Button text
-        if(button.getButtonText().isNotEmpty()) {
-            g.setColour(isToggleOn ? textOnColor : textOffColor);
-            g.setFont(juce::FontOptions(bounds.getHeight() * 0.45f, juce::Font::bold));
-            g.drawFittedText(button.getButtonText(), bounds.toNearestInt(),
-                             juce::Justification::centred, 1);
-        }
+        g.strokePath(iconPath, juce::PathStrokeType(1.5f));
+
+        // 5. Draw Text
+        g.setColour(textColor);
+        g.setFont(juce::Font("Roboto", 14.0f, juce::Font::plain));
+        if(isHover)
+            g.setColour(textColor.brighter(0.1f));
+
+        g.drawFittedText(text, textBounds.toNearestInt(), juce::Justification::centredLeft, 1);
     }
+
     // ##########################################
     // #                                        #
     // #  MAKE CURSOR GO KAPUT WHEN PRESSED :)  #

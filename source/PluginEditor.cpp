@@ -26,7 +26,6 @@ SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcesso
     gainControlSection.setLookAndFeel(&theme);
     compressionModeSection.setLookAndFeel(&theme);
 
-    // pluginTitleImage = juce::ImageFileFormat::loadFrom(juce::File("../Spectrix.png"));
     pluginTitleImage
      = juce::ImageCache::getFromMemory(BinaryData::logo_png, BinaryData::logo_pngSize);
 
@@ -84,9 +83,9 @@ void SpectrixAudioProcessorEditor::resized() {
     bounds.removeFromBottom(20);
 
     auto topSectionBounds = bounds;
-    topSectionBounds.removeFromBottom(bounds.getHeight() * 0.3 + 10);
+    topSectionBounds.removeFromBottom(bounds.getHeight() * 0.25 + 10);
     auto bottomSectionBounds = bounds;
-    bottomSectionBounds.removeFromTop(bounds.getHeight() * 0.7 + 10);
+    bottomSectionBounds.removeFromTop(bounds.getHeight() * 0.75 + 10);
     bottomSectionBounds.reduce(20, 0);
 
     meteringSecttion.setBounds(topSectionBounds.withTrimmedLeft(bounds.getWidth() * 0.975));
