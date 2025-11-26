@@ -19,6 +19,7 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
         static_assert(FFT_SIZE >= 64, "FFT_SIZE must be at least 64");
         static_assert(NUM_CHANNELS > 0 && NUM_CHANNELS <= 8,
                       "NUM_CHANNELS must be between 1 and 8");
+        computeWindowGain();
         computeWindowCompensation();
     }
 
@@ -110,10 +111,10 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
     void storeProcessedMagnitudes(const std::array<float, FFT_SIZE * 2> &fftBuffer, int channel) {
         juce::SpinLock::ScopedLockType lock(mutex);
 
-        constexpr float windowComp = 0.49f;                 // Hann/Blackman window compensation
-        const float scale = (2.0f / FFT_SIZE) * windowComp; // normal bins
-        const float dcNyquistScale = (1.0f / FFT_SIZE) * windowComp;  // DC & Nyquist
-        const float channelWeight = (NUM_CHANNELS > 1) ? 0.5f : 1.0f; // average stereo
+        // Use computed window gain instead of hardcoded value
+        const float scale = (2.0f / FFT_SIZE) / windowCoherentGain;          // normal bins
+        const float dcNyquistScale = (1.0f / FFT_SIZE) / windowCoherentGain; // DC & Nyquist
+        const float channelWeight = (NUM_CHANNELS > 1) ? 0.5f : 1.0f;        // average stereo
 
         auto computeMag = [&](size_t bin) {
             if(bin == 0) {
@@ -140,6 +141,21 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
             for(size_t i = 0; i <= FFT_SIZE / 2; ++i)
                 processedMagnitudes[i] = tempMagnitudes[i] + computeMag(i);
         }
+    }
+
+    void computeWindowGain() {
+        std::array<float, FFT_SIZE> tempWindow;
+        std::fill(tempWindow.begin(), tempWindow.end(), 1.0f);
+        window.multiplyWithWindowingTable(tempWindow.data(), FFT_SIZE);
+
+        // Sum all window coefficients to get coherent gain
+        float sum = 0.0f;
+        for(size_t i = 0; i < FFT_SIZE; ++i) {
+            sum += tempWindow[i];
+        }
+
+        // Coherent gain (for single frequency components)
+        windowCoherentGain = sum / FFT_SIZE;
     }
 
     void computeWindowCompensation() {
@@ -192,6 +208,8 @@ template <size_t FFT_SIZE = 512, size_t NUM_CHANNELS = 2> class FFTProcessor {
     std::array<float, FFT_SIZE / 2 + 1> tempMagnitudes;
 
   protected:
+    float windowCoherentGain = 0.42f; // Computed in constructor
+
     double sampleRate = 44100.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FFTProcessor)

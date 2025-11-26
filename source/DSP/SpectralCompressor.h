@@ -39,17 +39,20 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     void prepareToPlay(double newSampleRate) override {
         FFTProcessor<FFT_SIZE, NUM_CHANNELS>::prepareToPlay(newSampleRate);
         this->nyquist = static_cast<float>(newSampleRate) * 0.5f;
-        this->windowCompensation = WINDOW_COMPENSATION_FACTOR;
-        this->scale = (2.0f / FFT_SIZE) * windowCompensation;
-        this->dcNyquistScale = (1.0f / FFT_SIZE) * windowCompensation;
+
+        // Use the parent class's computed window gain
+        this->scale = (2.0f / FFT_SIZE) / this->windowCoherentGain;
+        this->dcNyquistScale = (1.0f / FFT_SIZE) / this->windowCoherentGain;
+
         updateCoefficients();
         envelopeFollowers.fill(0.0f);
     }
 
+    CompressorMode getCompressorMode() const { return mode; }
+
   private:
     static constexpr size_t NUM_BINS = FFT_SIZE / 2 + 1;
     static constexpr size_t OVERLAP_FACTOR = 4;
-    static constexpr float WINDOW_COMPENSATION_FACTOR = 0.49f;
     static constexpr float MIN_MAGNITUDE_THRESHOLD = 1e-10f;
     static constexpr float MIN_MAGNITUDE_DB = -100.0f;
     static constexpr float MAX_COEFF = 0.99999f;
@@ -84,8 +87,6 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         float magnitude, phase;
         extractMagnitudeAndPhase(buffer, bin, magnitude, phase);
         const float magnitudeDB = magnitudeToDecibels(magnitude);
-        // gaussianPeaks) != prevGaussianPeaks)
-        // const float thresholdDB = currentResponseCurve[i];
         const float thresholdDB = calculateGaussianSum(frequency, gaussianPeaks);
         const float gainReductionDB = calculateCompression(magnitudeDB, thresholdDB, bin);
         gainReductionArray[bin] = gainReductionDB;
@@ -124,6 +125,7 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
             buffer[2 * bin + 1] = magnitude * std::sin(phase);
         }
     }
+
     float magnitudeToDecibels(float magnitude) const {
         return (magnitude > MIN_MAGNITUDE_THRESHOLD) ? 20.0f * std::log10(magnitude)
                                                      : MIN_MAGNITUDE_DB;
@@ -217,7 +219,6 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     float releaseCoeff = 0.0f;
 
     float nyquist = 0.0f;
-    float windowCompensation = 0.0f;
     float scale = 0.0f;
     float dcNyquistScale = 0.0f;
 
