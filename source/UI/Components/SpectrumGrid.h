@@ -1,5 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
+#include "PluginParameters.h"
+#include "UIutils.h"
 
 class SpectrumGrid : public juce::Component {
   public:
@@ -34,6 +36,7 @@ class SpectrumGrid : public juce::Component {
 
         g.setFont(10.f);
 
+        // Vertical frequency grid (existing behavior)
         for(const auto &freqLabel : freqLabels) {
             if(freqLabel.freq > maxFreq || freqLabel.freq < minFreq)
                 continue;
@@ -55,20 +58,51 @@ class SpectrumGrid : public juce::Component {
                 g.drawVerticalLine(juce::roundToInt(x), bounds.getY(), bounds.getBottom());
             }
         }
-        {
-            auto bounds = getLocalBounds().toFloat();
 
+        // Horizontal dB grid (new)
+        {
+            const float minDB = Parameters::minDBVisualizer;
+            const float maxDB = Parameters::maxDBVisualizer;
+
+            auto dbToY = [&](float db) {
+                // Match the spectrum mapping: warp then map warpedDB -> screen Y
+                float warped = DBWarp(db);
+                return juce::jmap<float>(warped, minDB, maxDB, bounds.getBottom(), bounds.getY());
+            };
+
+            // Draw lines every 10 dB; mark majors every 20 dB
+            const int step = 10;
+            int start = static_cast<int>(std::ceil(minDB / (float)step) * step);
+            int end = static_cast<int>(std::floor(maxDB / (float)step) * step);
+
+            for(int db = start; db <= end; db += step) {
+                float y = dbToY((float)db);
+                bool isMajor = (db % 20 == 0);
+
+                if(isMajor)
+                    g.setColour(juce::Colour(70, 75, 85));
+                else
+                    g.setColour(juce::Colour(50, 55, 65).withAlpha(0.4f));
+
+                g.drawHorizontalLine(juce::roundToInt(y), bounds.getX(), bounds.getRight());
+
+                if(isMajor) {
+                    g.setColour(juce::Colour(150, 155, 165));
+                    g.drawText(juce::String(db) + " dB", juce::roundToInt(bounds.getX()) + 4,
+                               juce::roundToInt(y) - 15, 48, 14, juce::Justification::left);
+                }
+            }
+        }
+
+        // Top fade (existing)
+        {
             float fadeHeight = 40.0f; // adjust to taste
 
             juce::ColourGradient fadeGrad(
-             juce::Colour(21, 9, 37).withAlpha(1.0f), // fully transparent at very top
-
+             juce::Colour(21, 9, 37).withAlpha(1.0f), // fully opaque at very top
              bounds.getX(), bounds.getY(),
-
-             juce::Colour(21, 9, 37).withAlpha(0.0f), // fully transparent at very top
-             bounds.getX(), bounds.getY() + fadeHeight,
-
-             false);
+             juce::Colour(21, 9, 37).withAlpha(0.0f), // fully transparent at fadeHeight
+             bounds.getX(), bounds.getY() + fadeHeight, false);
 
             g.setGradientFill(fadeGrad);
             g.fillRect(bounds.withHeight(fadeHeight));

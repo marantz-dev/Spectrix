@@ -17,7 +17,7 @@ namespace Parameters {
     static const String ratioID = "RA";
 
     // Default values
-    static const float defaultCurveShiftDB = -10.0f;
+    static const float defaultCurveShiftDB = 0.0f;
     static const float defaultAttackTime = 10.0f;   // ms
     static const float defaultReleaseTime = 100.0f; // ms
     static const float defaultKneeWidth = 3.0f;     // dB
