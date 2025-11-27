@@ -6,6 +6,9 @@
 
 **Precision Dynamics in the Frequency Domain.**
 
+[![GitHub Stars](https://img.shields.io/github/stars/marantz-dev/Spectrix?style=social)](https://github.com/marantz-dev/Spectrix)
+[![GitHub Forks](https://img.shields.io/github/forks/marantz-dev/Spectrix?style=social)](https://github.com/marantz-dev/Spectrix)
+
 [Report Bug](https://github.com/marantz-dev/Spectrix/issues) · [Request Feature](https://github.com/marantz-dev/Spectrix/issues)
 
 </div>

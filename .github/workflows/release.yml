@@ -1,4 +1,4 @@
-name: Release — Publish Spectrix VST3
+name: New Release
 
 on:
   workflow_dispatch:
@@ -43,28 +43,30 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       # 4. Packaging con nome versione
-      - name: Package VST3
+      - name: Package Artifacts
         run: |
           mkdir -p dist
-          find build -name "Spectrix.vst3" -type d -exec cp -R {} dist/ \;
-          cd dist
-
-          # Nome file con versione e OS
           OS_NAME="${{ matrix.os }}"
+          # Nome file con versione e OS
           if [[ "$OS_NAME" == "macos-latest" ]]; then
-            PLATFORM="macOS"
+          PLATFORM="macOS"
+          find build -name "Spectrix.vst3" -type d -exec cp -R {} dist/ \;
+          find build -name "Spectrix.component" -type d -exec cp -R {} dist/ \;
+          cd dist
+          cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3 Spectrix.component
           else
-            PLATFORM="Windows"
+          PLATFORM="Windows"
+          find build -name "Spectrix.vst3" -type f -exec cp -R {} dist/ \;
+          cd dist
+          cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3
           fi
-
-          cmake -E tar cfv ../Spectrix-VST3-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3
 
       # 5. Upload artifact per la release
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Spectrix-VST3-${{ inputs.version }}-${{ matrix.os }}
-          path: Spectrix-VST3-${{ inputs.version }}-*.zip
+          name: Spectrix-${{ inputs.version }}-${{ matrix.os }}
+          path: Spectrix-${{ inputs.version }}-*.zip
 
   release:
     name: Create GitHub Release
@@ -91,24 +93,25 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ inputs.version }}
-          name: Spectrix VST3 ${{ inputs.version }}
+          name: Spectrix ${{ inputs.version }}
           draft: false
           prerelease: ${{ inputs.prerelease }}
           generate_release_notes: true
           files: release-files/*.zip
           body: |
-            ## Spectrix VST3 ${{ inputs.version }}
+            ## Spectrix ${{ inputs.version }}
 
             ### Download
-            - **macOS**: `Spectrix-VST3-${{ inputs.version }}-macOS.zip`
-            - **Windows**: `Spectrix-VST3-${{ inputs.version }}-Windows.zip`
+            - **macOS**: `Spectrix-${{ inputs.version }}-macOS.zip`
+            - **Windows**: `Spectrix-${{ inputs.version }}-Windows.zip`
 
             ### Installation
             1. Download the appropriate file for your OS
             2. Extract the ZIP archive
-            3. Copy `Spectrix.vst3` to your VST3 folder:
-               - **macOS**: `~/Library/Audio/Plug-Ins/VST3/`
-               - **Windows**: `C:\Program Files\Common Files\VST3\`
+            3. Copy `Spectrix.vst3` to your VST3/AU folder:
+               - **macOS** VST3: `/Library/Audio/Plug-Ins/VST3/`
+               - **macOS** AU: `/Library/Audio/Plug-Ins/Components/`
+               - **Windows** VST3: `C:\Program Files\Common Files\VST3\`
 
             ### Changes
             See below for auto-generated release notes.
