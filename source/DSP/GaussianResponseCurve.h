@@ -13,7 +13,11 @@ struct GaussianPeak {
 };
 class GaussianResponseCurve {
   public:
-    GaussianResponseCurve() {}
+    GaussianResponseCurve() {
+        // addPeak({100.0f, -40.0f, 0.25f});
+        // addPeak({1000.0f, -60.0f, 0.075f});
+        // addPeak({5000.0f, -80.0f, 0.025f});
+    }
 
     void addPeak(GaussianPeak newPeak) {
         const std::lock_guard<std::mutex> lock(mutex);

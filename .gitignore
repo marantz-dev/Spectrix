@@ -3,4 +3,8 @@
 compile_commands.json
 .DS_Store
 /.cache
+*.asd
+*.asd
+test/testSignals/*.wav
+test/abletonProject
 
