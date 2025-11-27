@@ -1,72 +1,92 @@
-# Spectrix – Spectral Compressor
+# Spectrix
 
-![screenshot](Spectrix.png)
+<div align="center">
 
-**Spectrix** is an experimental spectral dynamics processor built with [JUCE](https://juce.com/).  
-It applies dynamic range compression across the frequency spectrum for more precise control than traditional broadband compressors.
+![Spectrix UI](Spectrix.png)
 
-## Requirements
+**Precision Dynamics in the Frequency Domain.**
 
-- [JUCE 8](https://github.com/juce-framework/JUCE) installed locally
-- CMake ≥ 3.22
-- C++20 compatible compiler
-- Xcode (macOS) or Visual Studio 2022 (Windows)
+[Report Bug](https://github.com/marantz-dev/Spectrix/issues) · [Request Feature](https://github.com/marantz-dev/Spectrix/issues)
 
-## Build Instructions
+</div>
 
-‼️ **If you want to use JUCE that is already installled on you system you need to point the cpm package to your JUCE path**
+---
 
-### In Spectrix/CMakeLists.txt
+## Overview
 
-```bash
+**Spectrix** is an experimental spectral dynamics processor built with [JUCE 8](https://juce.com/). Unlike traditional broadband compressors that react to the entire signal at once, Spectrix breaks your audio into thousands of frequency bands, applying dynamic compression to each one independently.
+
+Whether you need transparent control for mastering or radical spectral sculpting for sound design, Spectrix offers surgical precision.
+
+## Features
+
+- **Spectral Compression:** Tame resonant frequencies without squashing the life out of your mix.
+- **Real-time Visualization:** See exactly how your dynamics processing affects the frequency spectrum.
+- **Modern Architecture:** Built with C++20 and the latest JUCE 8 framework.
+- **Cross-Platform:** Supports macOS and Windows.
+
+## Build Requirements
+
+To build Spectrix from source, ensure you have the following installed:
+
+- **C++ Compiler:** C++20 compatible (Clang, GCC, MSVC, etc.)
+- **Build System:** [CMake](https://cmake.org/) (Version 3.22+)
+
+## Getting Started
+
+### 1. Configure JUCE
+
+Spectrix uses CPM to manage dependencies. You can either let the build system download JUCE automatically or point it to your local installation.
+
+**Option A: Download Automatically (Default)**
+The `CMakeLists.txt` is already set up to download JUCE 8.0.6.
+
+**Option B: Use Local Installation**
+If you prefer to use a local version of JUCE, edit `CMakeLists.txt`:
+
+```cmake
 cpmaddpackage(
-
-  ###This will download JUCE the first time you build###
-
   NAME JUCE
-  GIT_TAG 8.0.6
-  VERSION 8.0.6
-  GITHUB_REPOSITORY juce-framework/JUCE
-
-  ###This will point cpm to your installed JUCE path###
-
-  NAME JUCE
-  SOURCE_DIR /YOUR/JUCE/PATH
+  SOURCE_DIR "/PATH/TO/YOUR/JUCE" # Update this path
 )
 ```
 
-### macOS (Xcode)
+### 2. Build Instructions
+
+#### macOS (Xcode)
 
 ```bash
-# Clone the repo
+# 1. Clone the repository
 git clone https://github.com/marantz-dev/Spectrix.git
 cd Spectrix
 
-# Generate Xcode project
+# 2. Generate Xcode project
 cmake -B build/Xcode -G Xcode
 
-# Build (Debug)
+# 3. Build (Debug mode)
 cmake --build build/Xcode --config Debug
 ```
 
-Open the generated .xcodeproj in build/Xcode to run/debug.
+_Open the generated `.xcodeproj` in `build/Xcode` to run or debug._
 
-### Windows (Visual Studio 2022)
+#### Windows (Visual Studio 2022)
 
 ```bash
-# Clone the repo
+# 1. Clone the repository
 git clone https://github.com/marantz-dev/Spectrix.git
 cd Spectrix
 
-# Generate Visual Studio solution
+# 2. Generate Solution
 cmake -B build/VS2022 -G "Visual Studio 17 2022" -A x64
 
-# Build (Debug)
+# 3. Build (Debug mode)
 cmake --build build/VS2022 --config Debug
 ```
 
-Open the generated .sln in Builds/VS2022 to run/debug.
+_Open the generated `.sln` in `build/VS2022` to run or debug._
 
-- Add 2nd window + Compensation
-- Be carefull su cosa calcoli attack e release (sample rate / hopsize)
--
+<div align="center">
+
+_Experimental software - Use with caution on loud systems!_
+
+</div>

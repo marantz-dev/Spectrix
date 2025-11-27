@@ -104,7 +104,7 @@ class Theme : public juce::LookAndFeel_V4 {
 
     // 1. Font for the Slider Value (e.g. "10.0 ms")
     juce::Font getLabelFont(juce::Label &label) override {
-        return juce::Font("Roboto", 13.0f, juce::Font::plain); // Clean, sans-serif
+        return juce::FontOptions("Roboto", 13.0f, juce::Font::plain); // Clean, sans-serif
     }
 
     // 2. Custom Text Box (Transparent, no borders)
@@ -227,7 +227,7 @@ class Theme : public juce::LookAndFeel_V4 {
 
         // 5. Draw Text
         g.setColour(textColor);
-        g.setFont(juce::Font("Roboto", 14.0f, juce::Font::plain));
+        g.setFont(juce::FontOptions("Roboto", 14.0f, juce::Font::plain));
         if(isHover)
             g.setColour(textColor.brighter(0.1f));
 
