@@ -1,8 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "PluginParameters.h"
 
-#define FPS 60
 #define RT 0.15f
 #define DB_FLOOR -48.0f
 #define DB_CEILING 6.0f
@@ -31,8 +31,8 @@ class Meter : public juce::Component, public Timer {
 class VolumeMeter : public Meter {
   public:
     VolumeMeter() {
-        alpha = exp(-1.0f / (FPS * RT));
-        startTimerHz(FPS);
+        alpha = exp(-1.0f / (Parameters::FPS * RT));
+        startTimerHz(Parameters::FPS);
     }
 
     void paint(juce::Graphics &g) override {

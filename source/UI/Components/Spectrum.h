@@ -12,11 +12,10 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
                     const juce::Colour spectrumColour)
         : processor(spectralProcessor), spectrumColour(spectrumColour), sampleRate(sampleRateHz) {
         magnitudes.resize(processor.getProcessedMagnitudes().size(), -100.0f);
-        startTimerHz(60);
+        startTimerHz(Parameters::FPS);
     }
 
     void paint(juce::Graphics &g) override {
-
         const auto &newMagnitudes = processor.getProcessedMagnitudes();
         if(newMagnitudes.empty())
             return;

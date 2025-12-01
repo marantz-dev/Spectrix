@@ -14,7 +14,7 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
                                     double sampleRateHz)
         : processor(processorRef), sampleRate(sampleRateHz) {
         gainReductions.resize((size_t)FFTSize / 2 + 1, 0.0f);
-        startTimerHz(60);
+        startTimerHz(Parameters::FPS);
     }
 
     void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; }

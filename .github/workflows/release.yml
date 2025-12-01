@@ -52,11 +52,13 @@ jobs:
           PLATFORM="macOS"
           find build -name "Spectrix.vst3" -type d -exec cp -R {} dist/ \;
           find build -name "Spectrix.component" -type d -exec cp -R {} dist/ \;
+          find build -name "Spectrix.app" -exec cp -R {} dist/ \;
           cd dist
           cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3 Spectrix.component
           else
           PLATFORM="Windows"
           find build -name "Spectrix.vst3" -type f -exec cp -R {} dist/ \;
+          find build -name "Spectrix.exe" -exec cp -R {} dist/ \;
           cd dist
           cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3
           fi

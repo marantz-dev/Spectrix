@@ -5,6 +5,7 @@
 
 namespace Parameters {
     static const int FFT_SIZE = 4096;
+    static const int FPS = 30;
 
     // Parameter IDs
     static const String curveShiftDBID = "CS";

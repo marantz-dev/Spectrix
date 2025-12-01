@@ -16,11 +16,12 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     SpectralDynamicsProcessor(GaussianResponseCurve &responseCurveReference)
         : FFTProcessor<FFT_SIZE, NUM_CHANNELS>(), responseCurve(responseCurveReference) {
         envelopeFollowers.fill(0.0f);
+        smoothedGainReduction.fill(0.0f);
     }
 
     void setCompressorMode(CompressorMode newMode) { mode = newMode; }
 
-    std::array<float, FFT_SIZE / 2 + 1> getGainReductionArray() const { return gainReductionArray; }
+    std::array<float, FFT_SIZE / 2 + 1> getGainReductionArray() const { return smoothedGainReduction; }
 
     void setAttackTime(float timeMs) {
         attackTimeMs = timeMs;
@@ -36,6 +37,8 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
 
     void setKnee(float kneeDB) { kneeWidthDB = kneeDB; }
 
+
+
     void prepareToPlay(double newSampleRate) override {
         FFTProcessor<FFT_SIZE, NUM_CHANNELS>::prepareToPlay(newSampleRate);
         this->nyquist = static_cast<float>(newSampleRate) * 0.5f;
@@ -46,6 +49,7 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
 
         updateCoefficients();
         envelopeFollowers.fill(0.0f);
+        smoothedGainReduction.fill(0.0f);
     }
 
     CompressorMode getCompressorMode() const { return mode; }
@@ -76,23 +80,76 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         if(gaussianPeaks.empty())
             return;
 
+        // Fase 1: Estrai tutte le magnitudes e calcola gain reduction
         for(size_t bin = 0; bin < NUM_BINS; ++bin) {
-            processSingleBin(transformedBuffer, bin, gaussianPeaks);
+            extractMagnitudeAndPhase(transformedBuffer, bin, magnitudesArray[bin], phasesArray[bin]);
+
+            const float frequency = binToFrequency(bin);
+            const float magnitudeDB = magnitudeToDecibels(magnitudesArray[bin]);
+            const float thresholdDB = calculateGaussianSum(frequency, gaussianPeaks);
+            const float gainReductionDB = calculateCompression(magnitudeDB, thresholdDB, bin);
+
+            gainReductionArray[bin] = gainReductionDB;
+        }
+
+        // Fase 2: Applica smoothing spaziale alla gain reduction
+        applySpatialSmoothing();
+
+        // Fase 3: Applica la gain reduction smoothed alle magnitudes usando SIMD
+        applyGainReductionSIMD();
+
+        // Fase 4: Ricostruisci i valori complessi
+        for(size_t bin = 0; bin < NUM_BINS; ++bin) {
+            reconstructComplexValue(transformedBuffer, bin, magnitudesArray[bin], phasesArray[bin]);
         }
     }
 
-    void processSingleBin(std::array<float, FFT_SIZE * 2> &buffer, size_t bin,
-                          const std::vector<GaussianPeak> &gaussianPeaks) {
-        const float frequency = binToFrequency(bin);
-        float magnitude, phase;
-        extractMagnitudeAndPhase(buffer, bin, magnitude, phase);
-        const float magnitudeDB = magnitudeToDecibels(magnitude);
-        const float thresholdDB = calculateGaussianSum(frequency, gaussianPeaks);
-        const float gainReductionDB = calculateCompression(magnitudeDB, thresholdDB, bin);
-        gainReductionArray[bin] = gainReductionDB;
-        const float gainLinear = Decibels::decibelsToGain(-gainReductionDB);
-        magnitude *= gainLinear;
-        reconstructComplexValue(buffer, bin, magnitude, phase);
+    void applySpatialSmoothing() {
+        // Simple box blur / moving average spatial smoothing
+        // Kernel size based on spatialSmoothingAmount
+        const int kernelRadius = static_cast<int>(spatialSmoothingAmount * 10.0f); // 0-10 bins
+
+        if(kernelRadius < 1) {
+            // No smoothing
+            smoothedGainReduction = gainReductionArray;
+            return;
+        }
+
+        // Apply box blur
+        for(size_t bin = 0; bin < NUM_BINS; ++bin) {
+            float sum = 0.0f;
+            int count = 0;
+
+            // Average over neighboring bins
+            const int startBin = std::max(0, static_cast<int>(bin) - kernelRadius);
+            const int endBin = std::min(static_cast<int>(NUM_BINS) - 1, static_cast<int>(bin) + kernelRadius);
+
+            for(int k = startBin; k <= endBin; ++k) {
+                sum += gainReductionArray[k];
+                ++count;
+            }
+
+            smoothedGainReduction[bin] = sum / static_cast<float>(count);
+        }
+    }
+
+    void applyGainReductionSIMD() {
+        // Converti gain reduction da dB a lineare e applica alle magnitudes
+        // usando operazioni SIMD di JUCE
+
+        alignas(16) std::array<float, NUM_BINS> gainLinear;
+
+        // Converti da dB a gain lineare: gain = 10^(-gainReductionDB/20)
+        for(size_t i = 0; i < NUM_BINS; ++i) {
+            gainLinear[i] = juce::Decibels::decibelsToGain(-smoothedGainReduction[i]);
+        }
+
+        // Moltiplica magnitudes per gain usando SIMD
+        juce::FloatVectorOperations::multiply(
+            magnitudesArray.data(),
+            gainLinear.data(),
+            static_cast<int>(NUM_BINS)
+        );
     }
 
     float binToFrequency(size_t bin) const {
@@ -204,7 +261,11 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
         return thresholdDB + responseCurveShiftDB;
     }
 
+    // Arrays per elaborazione
+    std::array<float, NUM_BINS> magnitudesArray{};
+    std::array<float, NUM_BINS> phasesArray{};
     std::array<float, NUM_BINS> gainReductionArray{};
+    std::array<float, NUM_BINS> smoothedGainReduction{};
     std::array<float, NUM_BINS> envelopeFollowers{};
 
     CompressorMode mode = COMPRESSOR;
@@ -221,6 +282,8 @@ class SpectralDynamicsProcessor : public FFTProcessor<FFT_SIZE, NUM_CHANNELS> {
     float nyquist = 0.0f;
     float scale = 0.0f;
     float dcNyquistScale = 0.0f;
+
+    static constexpr float spatialSmoothingAmount = 0.3f; // Hard-coded spatial smoothing (0.0 = no smoothing, 1.0 = 10 bins radius)
 
     GaussianResponseCurve &responseCurve;
 
