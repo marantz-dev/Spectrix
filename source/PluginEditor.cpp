@@ -53,7 +53,7 @@ void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
     auto bounds = getLocalBounds();
     auto height = bounds.getHeight();
 
-    g.fillAll(juce::Colours::black.brighter(0.1f));
+
 
     auto topSectionBounds = getLocalBounds();
     topSectionBounds.removeFromBottom(topSectionBounds.getHeight() * 0.3 + 10);

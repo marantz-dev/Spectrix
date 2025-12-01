@@ -17,7 +17,7 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
         startTimerHz(Parameters::FPS);
     }
 
-    void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; }
+    void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; rebuildBinToX(); }
 
     void paint(juce::Graphics &g) override {
         // Fetch the latest reductions (copy)
@@ -35,7 +35,7 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
         const float nyquist = static_cast<float>(sampleRate) * 0.5f;
         const float minFreq = 20.0f;
         const float logMin = std::log10(minFreq);
-        const float logMax = std::log10(nyquist);
+        if (binToX.size() != gainReductions.size()) rebuildBinToX();
 
         // Get current mode
         CompressorMode currentMode = getCurrentMode();
@@ -54,8 +54,9 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
             if(freq < minFreq)
                 continue;
 
-            float logFreq = std::log10(freq);
-            float x = bounds.getX() + juce::jmap(logFreq, logMin, logMax, 0.0f, bounds.getWidth());
+            float x = (i < binToX.size()) ? binToX[i]
+                                         : bounds.getX() + juce::jmap(std::log10(juce::jmax(minFreq, freq)),
+                                                                      std::log10(minFreq), std::log10(nyquist), 0.0f, bounds.getWidth());
 
             // Interpret the gain value based on mode and map to equivalent spectrum dB
             float effectiveDB = interpretGainAsSpectrumDB(gainReductions[i], currentMode,
@@ -112,8 +113,27 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
         // Gradient fill
     }
 
+    void resized() override { rebuildBinToX(); }
+    void visibilityChanged() override { }
+  
   private:
-    void timerCallback() override { repaint(); }
+    void timerCallback() override { if (isShowing()) repaint(); }
+    
+    void rebuildBinToX() {
+        auto b = getLocalBounds().toFloat();
+        if (b.getWidth() <= 0.0f || sampleRate <= 0.0) { binToX.clear(); return; }
+        const float nyquist = static_cast<float>(sampleRate) * 0.5f;
+        const float minFreq = 20.0f;
+        const float logMin = std::log10(minFreq);
+        const float logMax = std::log10(nyquist);
+        const size_t n = gainReductions.size();
+        binToX.resize(n);
+        for (size_t i = 0; i < n; ++i) {
+            const float freq = (i * nyquist) / (n > 1 ? (n - 1) : 1);
+            const float logFreq = std::log10(juce::jmax(minFreq, freq));
+            binToX[i] = b.getX() + juce::jmap(logFreq, logMin, logMax, 0.0f, b.getWidth());
+        }
+    }
 
     CompressorMode getCurrentMode() const { return processor.getCompressorMode(); }
 
@@ -273,4 +293,5 @@ class SpectralGainReductionVisualizer : public juce::Component, private juce::Ti
     SpectralDynamicsProcessor<FFTSize> &processor;
     std::vector<float> gainReductions;
     double sampleRate;
+    std::vector<float> binToX;
 };

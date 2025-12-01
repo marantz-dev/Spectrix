@@ -15,13 +15,13 @@ class SpectrumSection : public juce::Component {
     SpectrumSection(SpectrixAudioProcessor &p)
         : audioProcessor(p),
           spectrumDisplay(audioProcessor.spectralCompressor, audioProcessor.getSampleRate(),
-                          juce::Colours::cyan.darker(1.0f)),
+                          juce::Colours::cyan.darker(1.0f), false),
           gainReductionVisualizer(audioProcessor.spectralCompressor,
                                   audioProcessor.getSampleRate()),
           responseCurve(audioProcessor.responseCurve, audioProcessor.getSampleRate()),
           grid(audioProcessor.getSampleRate()),
-          drySpectrum(audioProcessor.spectralVisualizer, audioProcessor.getSampleRate(),
-                      juce::Colours::blueviolet.darker(3)) {
+          drySpectrum(audioProcessor.spectralCompressor, audioProcessor.getSampleRate(),
+                      juce::Colours::blueviolet.darker(3), true) {
         // Group box
         addAndMakeVisible(grid);
         addAndMakeVisible(drySpectrum);

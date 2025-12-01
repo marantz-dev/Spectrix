@@ -9,14 +9,15 @@
 template <int FFTSize> class SpectrumDisplay : public juce::Component, private juce::Timer {
   public:
     SpectrumDisplay(FFTProcessor<FFTSize> &spectralProcessor, const double sampleRateHz,
-                    const juce::Colour spectrumColour)
-        : processor(spectralProcessor), spectrumColour(spectrumColour), sampleRate(sampleRateHz) {
+                    const juce::Colour spectrumColour, bool isDry = false)
+        : processor(spectralProcessor), spectrumColour(spectrumColour), sampleRate(sampleRateHz), isDry(isDry) {
         magnitudes.resize(processor.getProcessedMagnitudes().size(), -100.0f);
         startTimerHz(Parameters::FPS);
     }
 
     void paint(juce::Graphics &g) override {
-        const auto &newMagnitudes = processor.getProcessedMagnitudes();
+        const auto &newMagnitudes = isDry ? processor.getUnprocessedMagnitudes()
+                                          : processor.getProcessedMagnitudes();
         if(newMagnitudes.empty())
             return;
 
@@ -27,17 +28,24 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         std::vector<juce::Point<float>> points;
         points.reserve(magnitudes.size());
         points.emplace_back(bounds.getX(), bounds.getBottom());
-        float nyquistFreq = static_cast<float>(sampleRate) / 2.0f;
-        float minFreq = 20.0f;
-        float maxFreq = nyquistFreq;
-        float logMin = std::log10(minFreq);
-        float logMax = std::log10(maxFreq);
+        if (binToX.size() != magnitudes.size()) {
+            rebuildBinToX();
+        }
 
         for(size_t i = 1; i < magnitudes.size(); ++i) {
-            float frequency = (i * nyquistFreq) / (magnitudes.size() - 1);
-            float logFreq = std::log10(frequency);
-            float x = juce::jmap<float>(logFreq, (float)logMin, (float)logMax, bounds.getX(),
+            float x;
+            if (i < binToX.size()) {
+                x = binToX[i];
+            } else {
+                const float nyquistFreq = static_cast<float>(sampleRate) / 2.0f;
+                const float minFreq = 20.0f;
+                const float logMin = std::log10(minFreq);
+                const float logMax = std::log10(nyquistFreq);
+                float frequency = (i * nyquistFreq) / (magnitudes.size() - 1);
+                float logFreq = std::log10(juce::jmax(minFreq, frequency));
+                x = juce::jmap<float>(logFreq, (float)logMin, (float)logMax, bounds.getX(),
                                         bounds.getRight());
+            }
             float magnitudeDB = magnitudes[i]; // Already in dB from updateMagnitudes
             magnitudeDB
              = juce::jlimit(Parameters::minDBVisualizer, Parameters::maxDBVisualizer, magnitudeDB);
@@ -85,10 +93,28 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
         g.setColour(spectrumColour);
     }
 
-    void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; }
+    void setSampleRate(double newSampleRate) { sampleRate = newSampleRate; rebuildBinToX(); }
+    void resized() override { rebuildBinToX(); }
+    void visibilityChanged() override { }
 
   protected:
-    void timerCallback() override { repaint(); }
+    void timerCallback() override { if (isShowing()) repaint(); }
+
+    void rebuildBinToX() {
+        auto b = getLocalBounds().toFloat();
+        if (b.getWidth() <= 0.0f || sampleRate <= 0.0) { binToX.clear(); return; }
+        const float nyquistFreq = static_cast<float>(sampleRate) * 0.5f;
+        const float minFreq = 20.0f;
+        const float logMin = std::log10(minFreq);
+        const float logMax = std::log10(nyquistFreq);
+        const size_t n = magnitudes.size();
+        binToX.resize(n);
+        for (size_t i = 0; i < n; ++i) {
+            const float frequency = (i * nyquistFreq) / (n > 1 ? (n - 1) : 1);
+            const float logFreq = std::log10(juce::jmax(minFreq, frequency));
+            binToX[i] = juce::jmap<float>(logFreq, (float)logMin, (float)logMax, b.getX(), b.getRight());
+        }
+    }
 
     void spectralSmoothing(std::vector<juce::Point<float>> &points) {
         if(points.size() < 3)
@@ -135,7 +161,9 @@ template <int FFTSize> class SpectrumDisplay : public juce::Component, private j
     FFTProcessor<FFTSize> &processor;
     std::vector<float> magnitudes;
     double sampleRate;
+    bool isDry;
     float minDB = Parameters::minDBVisualizer;
     float maxDB = Parameters::maxDBVisualizer;
     juce::Colour spectrumColour;
+    std::vector<float> binToX;
 };

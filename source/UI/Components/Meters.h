@@ -21,7 +21,7 @@ class Meter : public juce::Component, public Timer {
     void flipMeter() { flipped = !flipped; }
 
   protected:
-    void timerCallback() override { repaint(); }
+    void timerCallback() override { if (isShowing()) repaint(); }
     bool flipped = false;
     Atomic<float> *probedSignal = nullptr;
     float alpha = 0.0;
@@ -31,6 +31,7 @@ class Meter : public juce::Component, public Timer {
 class VolumeMeter : public Meter {
   public:
     VolumeMeter() {
+        setOpaque(true);
         alpha = exp(-1.0f / (Parameters::FPS * RT));
         startTimerHz(Parameters::FPS);
     }
@@ -125,6 +126,7 @@ class VolumeMeter : public Meter {
     }
 
     void resized() override {}
+
     void connectTo(Atomic<float> &targetVariable) { probedSignal = &targetVariable; }
     void flipMeter() { flipped = !flipped; }
 

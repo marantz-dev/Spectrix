@@ -10,10 +10,32 @@ class SpectrumGrid : public juce::Component {
     void setSampleRate(double newSampleRate) {
         sampleRate = newSampleRate;
         updateLogFreqBounds();
+        dirty = true;
         repaint();
     }
 
+    void resized() override {
+        if (!cached.isNull() && (cached.getWidth() != getWidth() || cached.getHeight() != getHeight())) {
+            cached = juce::Image();
+        }
+        dirty = true;
+    }
+
     void paint(juce::Graphics &g) override {
+        if (cached.isNull() || cached.getWidth() != getWidth() || cached.getHeight() != getHeight()) {
+            cached = juce::Image(juce::Image::ARGB, juce::jmax(1, getWidth()), juce::jmax(1, getHeight()), true);
+            dirty = true;
+        }
+        if (dirty) {
+            cached.clear(cached.getBounds(), juce::Colours::transparentBlack);
+            juce::Graphics ig(cached);
+            paintGridTo(ig);
+            dirty = false;
+        }
+        g.drawImageAt(cached, 0, 0);
+    }
+
+    void paintGridTo(juce::Graphics &g) {
         auto bounds = getLocalBounds().toFloat();
 
         struct FreqLabel {
@@ -129,6 +151,9 @@ class SpectrumGrid : public juce::Component {
     double maxFreq = 22050.0;
     double logMin = std::log10(20.0);
     double logMax = std::log10(22050.0);
+
+    juce::Image cached;
+    bool dirty = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrumGrid)
 };

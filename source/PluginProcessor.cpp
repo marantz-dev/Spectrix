@@ -20,7 +20,6 @@ SpectrixAudioProcessor::~SpectrixAudioProcessor() {}
 //==============================================================================
 void SpectrixAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     spectralCompressor.prepareToPlay(sampleRate);
-    spectralVisualizer.prepareToPlay(sampleRate);
     setLatencySamples(2 * Parameters::FFT_SIZE - 2);
 
     if(auto *editor = dynamic_cast<SpectrixAudioProcessorEditor *>(getActiveEditor())) {
@@ -46,7 +45,6 @@ void SpectrixAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
     updateProbe(inputProbe, buffer, buffer.getNumSamples());
 
-    spectralVisualizer.processBlock(buffer);
     spectralCompressor.processBlock(buffer);
 
     for(int ch = 0; ch < numCh; ++ch)
