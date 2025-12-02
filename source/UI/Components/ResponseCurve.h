@@ -83,7 +83,7 @@ class ResponseCurve : public juce::Component {
         lastClickTime = now;
         lastClickPos = event.position;
         mouseDownPos = event.position;
-        repaint();
+        // repaint();
     }
 
     void mouseDrag(const juce::MouseEvent &event) override {
@@ -124,7 +124,7 @@ class ResponseCurve : public juce::Component {
 
         dragInfoLabel.setBounds((int)x, (int)y, labelWidth, labelHeight);
 
-        repaint();
+        // repaint();
     }
 
     void mouseUp(const juce::MouseEvent &) override {
@@ -147,7 +147,7 @@ class ResponseCurve : public juce::Component {
                 setMouseCursor(juce::MouseCursor::NormalCursor);
             }
 
-            repaint();
+            // repaint();
         }
     }
 

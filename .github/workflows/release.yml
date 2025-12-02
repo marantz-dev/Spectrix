@@ -49,18 +49,18 @@ jobs:
           OS_NAME="${{ matrix.os }}"
           # Nome file con versione e OS
           if [[ "$OS_NAME" == "macos-latest" ]]; then
-          PLATFORM="macOS"
-          find build -name "Spectrix.vst3" -type d -exec cp -R {} dist/ \;
-          find build -name "Spectrix.component" -type d -exec cp -R {} dist/ \;
-          find build -name "Spectrix.app" -exec cp -R {} dist/ \;
-          cd dist
-          cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3 Spectrix.component
+            PLATFORM="macOS"
+            find build -name "Spectrix.vst3" -type d -exec cp -R {} dist/ \;
+            find build -name "Spectrix.component" -type d -exec cp -R {} dist/ \;
+            find build -name "Spectrix.app" -type d -exec cp -R {} dist/ \;
+            cd dist
+            cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3 Spectrix.component Spectrix.app
           else
-          PLATFORM="Windows"
-          find build -name "Spectrix.vst3" -type f -exec cp -R {} dist/ \;
-          find build -name "Spectrix.exe" -exec cp -R {} dist/ \;
-          cd dist
-          cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3
+            PLATFORM="Windows"
+            find build -name "Spectrix.vst3" -type d -exec cp -R {} dist/ \;
+            find build -name "Spectrix.exe" -type f -exec cp {} dist/ \;
+            cd dist
+            cmake -E tar cfv ../Spectrix-${{ inputs.version }}-${PLATFORM}.zip --format=zip Spectrix.vst3 Spectrix.exe
           fi
 
       # 5. Upload artifact per la release
