@@ -37,7 +37,7 @@ namespace Parameters {
     static const float minRatio = 1.0f;
     static const float maxRatio = 20.0f;
     static const float minKnee = 0.0f;
-    static const float maxKnee = 12.0f;
+    static const float maxKnee = 24.0f;
     static const float minInputGain = -24.0f;
     static const float maxInputGain = 24.0f;
     static const float minOutputGain = -24.0f;

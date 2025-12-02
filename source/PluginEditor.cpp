@@ -14,8 +14,8 @@
 SpectrixAudioProcessorEditor::SpectrixAudioProcessorEditor(SpectrixAudioProcessor &p,
                                                            AudioProcessorValueTreeState &vts)
     : AudioProcessorEditor(&p), audioProcessor(p), compressorControlsSection(vts),
-      gainControlSection(vts), compressionModeSection(vts), spectrumSection(p),
-      meteringSecttion(p) {
+      gainControlSection(vts), compressionModeSection(vts, compressorControlsSection),
+      spectrumSection(p), meteringSecttion(p) {
     addAndMakeVisible(spectrumSection);
     addAndMakeVisible(compressorControlsSection);
     addAndMakeVisible(gainControlSection);
@@ -52,8 +52,6 @@ SpectrixAudioProcessorEditor::~SpectrixAudioProcessorEditor() {
 void SpectrixAudioProcessorEditor::paint(juce::Graphics &g) {
     auto bounds = getLocalBounds();
     auto height = bounds.getHeight();
-
-
 
     auto topSectionBounds = getLocalBounds();
     topSectionBounds.removeFromBottom(topSectionBounds.getHeight() * 0.3 + 10);

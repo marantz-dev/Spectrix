@@ -3,7 +3,6 @@
 #include <JuceHeader.h>
 #include "PluginParameters.h"
 #include "GaussianResponseCurve.h"
-#include "SpectralVisualizer.h"
 
 class SpectrixAudioProcessor : public juce::AudioProcessor,
                                public AudioProcessorValueTreeState::Listener {

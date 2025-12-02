@@ -110,6 +110,13 @@ class CompressorSection : public juce::Component {
         UIutils::attachLabel(kneeLabel, &kneeSlider);
     }
 
+    void updateEnabled() {
+        attackSlider.setEnabled(*vts.getRawParameterValue(Parameters::compressorModeID) < 2);
+        releaseSlider.setEnabled(*vts.getRawParameterValue(Parameters::compressorModeID) < 2);
+        kneeSlider.setEnabled(*vts.getRawParameterValue(Parameters::compressorModeID) < 2);
+        ratioSlider.setEnabled(*vts.getRawParameterValue(Parameters::compressorModeID) < 2);
+    }
+
   private:
     juce::GroupComponent compressorSectionBorder;
     AudioProcessorValueTreeState &vts;

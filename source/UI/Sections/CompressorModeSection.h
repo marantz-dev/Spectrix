@@ -1,12 +1,14 @@
 #pragma once
 #include <JuceHeader.h>
+#include "CompressorControls.h"
 #include "PluginParameters.h"
 #include "UIutils.h"
 #include "Theme.h" // <--- Make sure to include your Theme file
 
 class CompressionModeSection : public juce::Component {
   public:
-    CompressionModeSection(AudioProcessorValueTreeState &apvts) : vts(apvts) {
+    CompressionModeSection(AudioProcessorValueTreeState &apvts, CompressorSection &compSection)
+        : vts(apvts), dependentSection(compSection) {
         setLookAndFeel(&theme);
 
         addAndMakeVisible(compressorModeBorder);
@@ -63,8 +65,12 @@ class CompressionModeSection : public juce::Component {
   private:
     void setMode(int index) {
         if(auto *param = dynamic_cast<juce::AudioParameterChoice *>(
+
             vts.getParameter(Parameters::compressorModeID))) {
+            param->beginChangeGesture();
             param->setValueNotifyingHost(param->convertTo0to1(index));
+            dependentSection.updateEnabled();
+            param->endChangeGesture();
         }
         updateButtons();
     }
@@ -91,6 +97,7 @@ class CompressionModeSection : public juce::Component {
     juce::ToggleButton expanderButton;
     juce::ToggleButton gateButton;
     juce::ToggleButton clipperButton;
+    CompressorSection &dependentSection;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CompressionModeSection)
 };

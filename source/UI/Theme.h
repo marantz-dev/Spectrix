@@ -49,6 +49,7 @@ class Theme : public juce::LookAndFeel_V4 {
         g.strokePath(backgroundArc, juce::PathStrokeType(lineW, juce::PathStrokeType::curved,
                                                          juce::PathStrokeType::rounded));
 
+        auto knobRadius = radius - 8.0f;
         // 4. Draw Active Track (The "Value" part) with GRADIENT
         if(slider.isEnabled()) {
             juce::Path valueArc;
@@ -65,19 +66,17 @@ class Theme : public juce::LookAndFeel_V4 {
             g.setGradientFill(activeGradient);
             g.strokePath(valueArc, juce::PathStrokeType(lineW, juce::PathStrokeType::curved,
                                                         juce::PathStrokeType::rounded));
+            // 5. Draw Knob Face
+
+            g.setColour(knobColor);
+            g.fillEllipse(centre.x - knobRadius, centre.y - knobRadius, knobRadius * 2.0f,
+                          knobRadius * 2.0f);
+
+            // Subtle edge
+            g.setColour(juce::Colours::black.withAlpha(0.5f));
+            g.drawEllipse(centre.x - knobRadius, centre.y - knobRadius, knobRadius * 2.0f,
+                          knobRadius * 2.0f, 1.0f);
         }
-
-        // 5. Draw Knob Face
-        auto knobRadius = radius - 8.0f;
-
-        g.setColour(knobColor);
-        g.fillEllipse(centre.x - knobRadius, centre.y - knobRadius, knobRadius * 2.0f,
-                      knobRadius * 2.0f);
-
-        // Subtle edge
-        g.setColour(juce::Colours::black.withAlpha(0.5f));
-        g.drawEllipse(centre.x - knobRadius, centre.y - knobRadius, knobRadius * 2.0f,
-                      knobRadius * 2.0f, 1.0f);
 
         // 6. Draw Indicator Dot
         // We keep the dot the bright cyan color so it pops against the gradient
